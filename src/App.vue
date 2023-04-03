@@ -4,6 +4,9 @@ import HelloWorld from "./components/HelloWorld.vue";
 
 <template>
   <div id="app">
+    <h1 class="text-3xl font-bold underline bg-red-100">
+    Hello world!
+    </h1>
     <header>
       <img
         alt="Vue logo"
