@@ -5,6 +5,8 @@ import legacy from "@vitejs/plugin-legacy";
 import vue2 from "@vitejs/plugin-vue2";
 import vue2Jsx from "@vitejs/plugin-vue2-jsx";
 
+import cesium from 'vite-plugin-cesium';
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -14,6 +16,9 @@ export default defineConfig({
       targets: ["ie >= 11"],
       additionalLegacyPolyfills: ["regenerator-runtime/runtime"],
     }),
+    cesium({
+      // rebuildCesium: true
+    })
   ],
   resolve: {
     alias: {
