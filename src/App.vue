@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-    <div id="app" class="">
+    <div id="app">
         <header class="p-5 flex gap-5">
             <router-link to="/">Home</router-link>
             <router-link to="/about">About</router-link>

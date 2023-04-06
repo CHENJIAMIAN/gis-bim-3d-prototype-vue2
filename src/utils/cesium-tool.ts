@@ -17,11 +17,25 @@ const tileUrl = "http://localhost:3000/Tilesets/Tileset/tileset.json";
 class CesiumTool {
   constructor() {
     this.viewer = null;
+    const { viewer } = this;
 
     this.createCesium("cesiumContainer");
+    this.viewer.scene.primitives.add(Cesium.createOsmBuildings());
     this.loadNavigatorPlugin();
     this.customBaseLayerPicker();
     this.setCesiumCamera();
+    this.load3DTileset();
+  }
+
+  load3DTileset() {
+    const { viewer } = this;
+    const tileset = new Cesium3DTileset({
+      url: tileUrl
+    });
+    viewer.scene.primitives.add(tileset);
+    tileset.readyPromise.then(function(tileset) {
+      viewer.zoomTo(tileset);
+    });
   }
 
   loadNavigatorPlugin() {
