@@ -6,13 +6,18 @@ import {
   HeadingPitchRoll,
   Cartesian3,
   Cesium3DTileset,
-  knockout,Cartographic
+  knockout,
+  Cartographic
 } from "cesium";
 import * as Cesium from "cesium";
+
 import CesiumNavigation from "cesium-navigation-es6";
+import { TransformEditor } from "./cesium-ion-plugins";
+
 window.Cesium = Cesium;
 
-const tileUrl = "http://localhost:3000/Tilesets/Tileset/tileset.json";
+const tileUrl =
+  "http://localhost:3000/Instanced/InstancedGltfExternal/tileset.json";
 
 class CesiumTool {
   constructor() {
@@ -22,20 +27,98 @@ class CesiumTool {
     this.createCesium("cesiumContainer");
     this.viewer.scene.primitives.add(Cesium.createOsmBuildings());
     this.loadNavigatorPlugin();
-    this.customBaseLayerPicker();
-    this.setCesiumCamera();
-    this.load3DTileset();
+    this.customBaseLayerPicker(); //添加高德底图
+    this.setCesiumCamera(); //重置HomeButton位置
+    this.load3DTileset().then((tileset) => {
+      // 原始matrix
+      console.log(tileset.modelMatrix.toString());
+      // 改一下matrix
+      this.initTilesetModelMatrixData(tileset);
+      console.log(tileset.modelMatrix.toString());
+      // // 又改一下matrix
+      // this.createTransformEditor(tileset);
+      // console.log(tileset.modelMatrix.toString());
+    });
   }
 
-  load3DTileset() {
+  initTilesetModelMatrixData(tileset) {
+    const boundingSphere = tileset.boundingSphere;
+    const center = boundingSphere.center;
+
+    // 将球体中心位置转换为经纬度坐标
+    const cartographic = Cesium.Cartographic.fromCartesian(center);
+    const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+    const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+    const height = cartographic.height;
+
+    // Tileset的自带中心位置经度: -75.61209430782448
+    // cesium-tool.ts:55 Tileset的自带中心位置纬度: 40.04253061446735
+    // cesium-tool.ts:56 Tileset的自带中心位置高度: 14.999210992965963
+
+    this.setTilesetModelMatrixData(tileset, {
+      // position: 0,
+      longitude,
+      latitude,
+      altitude: height,
+      headingPitchRoll: Cesium.HeadingPitchRoll.fromDegrees(0, 0, 0),
+      scale: { x: 1, y: 1, z: 1 }
+    });
+  }
+
+  setTilesetModelMatrixData(tileset, modelMatrixData) {
+    debugger
+    // var position = modelMatrixData.position;
+
+    var center = Cesium.Cartesian3.fromDegrees(
+      modelMatrixData.longitude,
+      modelMatrixData.latitude,
+      modelMatrixData.altitude
+    );
+
+    var headingPitchRoll = modelMatrixData.headingPitchRoll;
+
+    var hpr = new Cesium.HeadingPitchRoll(
+      headingPitchRoll.heading,
+      headingPitchRoll.pitch,
+      headingPitchRoll.roll
+    );
+
+    var scale = modelMatrixData.scale;
+
+    var scaleCartesian3 = new Cesium.Cartesian3(scale.x, scale.y, scale.z);
+
+    var modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(
+      center,
+      hpr
+    );
+
+    tileset.modelMatrix = Cesium.Matrix4.setScale(
+      modelMatrix,
+      scaleCartesian3,
+      new Cesium.Matrix4()
+    );
+  }
+
+  createTransformEditor(tileset) {
     const { viewer } = this;
-    const tileset = new Cesium3DTileset({
+
+    const transformEditor = new TransformEditor({
+      container: viewer.container,
+      scene: viewer.scene,
+      transform: tileset.modelMatrix,
+      boundingSphere: tileset.boundingSphere
+    });
+    transformEditor.viewModel.activate();
+  }
+
+  async load3DTileset() {
+    const { viewer } = this;
+    const tileset = (window.tileset = new Cesium3DTileset({
       url: tileUrl
-    });
-    viewer.scene.primitives.add(tileset);
-    tileset.readyPromise.then(function(tileset) {
-      viewer.zoomTo(tileset);
-    });
+    }));
+    await tileset.readyPromise;
+    viewer.zoomTo(tileset);
+    return viewer.scene.primitives.add(tileset);
   }
 
   loadNavigatorPlugin() {
@@ -379,14 +462,6 @@ class CesiumTool {
       );
       tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
     });
-  }
-
-  async load3DTile() {
-    const { viewer } = this;
-    var tileset = await Cesium3DTileset.fromUrl(tileUrl, {});
-    viewer.scene.primitives.add(tileset);
-    viewer.zoomTo(tileset);
-    return tileset;
   }
 }
 
