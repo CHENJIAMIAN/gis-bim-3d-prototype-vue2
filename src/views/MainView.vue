@@ -2,15 +2,30 @@
   import { onMounted } from "vue";
   import CesiumTool from "@/utils/cesium-tool";
 
+  let cesiumTool = null;
   onMounted(async () => {
-    const cesiumTool = new CesiumTool();
+    cesiumTool = new CesiumTool();
   });
+
+  const onClickFlyTo = () => {
+    viewer.flyTo(tileset);
+  };
+  const onCreateTransformEditor = () => {
+    // 又改一下matrix
+    cesiumTool.createTransformEditor(tileset);
+    console.log("createTransformEditor后:");
+    console.log(tileset.modelMatrix.toString());
+  };
 </script>
 
 <template>
   <main class="relative">
     <div id="cesiumContainer"></div>
     <div id="toolbar">
+      <el-button theme="primary" @click="onClickFlyTo">fly to</el-button>
+      <el-button theme="primary" @click="onCreateTransformEditor">
+        createTransformEditor
+      </el-button>
       <table>
         <tbody>
           <tr>

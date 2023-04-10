@@ -13,11 +13,19 @@ import * as Cesium from "cesium";
 
 import CesiumNavigation from "cesium-navigation-es6";
 import { TransformEditor } from "./cesium-ion-plugins";
-
+/*---------------------------------------------------------------------------------------*/
 window.Cesium = Cesium;
-
+/*---------------------------------------------------------------------------------------*/
+// const origin_fromTranslation = Cesium.Matrix4.fromTranslation;
+// Cesium.Matrix4.fromTranslation=(...args)=>{
+//     const res =  origin_fromTranslation(...args)
+//     console.log(res.toString());
+// }
+/*---------------------------------------------------------------------------------------*/
 const tileUrl =
   "http://localhost:3000/Instanced/InstancedGltfExternal/tileset.json";
+// 'http://localhost:34246/tileset.json'
+// 'http://localhost:34246/danti/tileset.json'
 
 class CesiumTool {
   constructor() {
@@ -30,43 +38,73 @@ class CesiumTool {
     this.customBaseLayerPicker(); //添加高德底图
     this.setCesiumCamera(); //重置HomeButton位置
     this.load3DTileset().then((tileset) => {
-      // 原始matrix
-      console.log(tileset.modelMatrix.toString());
-      // 改一下matrix
+      // 先将模型变换到0,0,0的位置
       this.initTilesetModelMatrixData(tileset);
+      console.log("initTilesetModelMatrixData");
       console.log(tileset.modelMatrix.toString());
       // // 又改一下matrix
-      // this.createTransformEditor(tileset);
-      // console.log(tileset.modelMatrix.toString());
+      this.createTransformEditor(tileset);
+      console.log("createTransformEditor后:");
+      console.log(tileset.modelMatrix.toString());
     });
   }
 
   initTilesetModelMatrixData(tileset) {
-    const boundingSphere = tileset.boundingSphere;
-    const center = boundingSphere.center;
-
-    // 将球体中心位置转换为经纬度坐标
-    const cartographic = Cesium.Cartographic.fromCartesian(center);
-    const longitude = Cesium.Math.toDegrees(cartographic.longitude);
-    const latitude = Cesium.Math.toDegrees(cartographic.latitude);
-    const height = cartographic.height;
-
     // Tileset的自带中心位置经度: -75.61209430782448
     // cesium-tool.ts:55 Tileset的自带中心位置纬度: 40.04253061446735
     // cesium-tool.ts:56 Tileset的自带中心位置高度: 14.999210992965963
+    const boundingSphere = tileset.boundingSphere;
+    const center = boundingSphere.center;
+    console.log("tileset center", center);
+    /*---------------------------------------------------------------------------------------*/
+    // var centerNew = Cesium.Cartesian3.fromElements(0, 0, 0);
+    // console.log("tileset -center", centerNew);
+    // var translationVector = Cesium.Cartesian3.subtract(
+    //   centerNew,//被减数
+    //   center,//减去量
+    //   new Cesium.Cartesian3()
+    // );
+    // console.log("subtract", translationVector);
+    // const modelMatrix = Cesium.Matrix4.fromTranslation(translationVector);
 
-    this.setTilesetModelMatrixData(tileset, {
-      // position: 0,
-      longitude,
-      latitude,
-      altitude: height,
-      headingPitchRoll: Cesium.HeadingPitchRoll.fromDegrees(0, 0, 0),
-      scale: { x: 1, y: 1, z: 1 }
-    });
+    const v = [
+      1,
+      0,
+      0,
+      0.0000001, //如果全0,会执行将其移动到地球表面,也就是移动一个地球半径即z轴+6378137米
+      0,
+      1,
+      0,
+      0, //
+      0,
+      0,
+      1,
+      0, //
+      0,
+      0,
+      0,
+      1 //
+    ];
+    const modelMatrix = Cesium.Matrix4.fromRowMajorArray(v);
+    console.log(modelMatrix.toString());
+
+    tileset.modelMatrix = modelMatrix;
+    // 看看原点是否变换后在0,0,0
+    const newCenter = new Cesium.Cartesian3();
+    Cesium.Matrix4.multiplyByPoint(modelMatrix, center, newCenter);
+    console.log("tileset center after modelMatrix", newCenter);
+    /*---------------------------------------------------------------------------------------*/
+    // this.setTilesetModelMatrixData(tileset, {
+    //   // position: 0,
+    //   longitude,
+    //   latitude,
+    //   altitude: height,
+    //   headingPitchRoll: Cesium.HeadingPitchRoll.fromDegrees(0, 0, 0),
+    //   scale: { x: 1, y: 1, z: 1 }
+    // });
   }
 
-  setTilesetModelMatrixData(tileset, modelMatrixData) {
-    debugger
+  private setTilesetModelMatrixData(tileset, modelMatrixData) {
     // var position = modelMatrixData.position;
 
     var center = Cesium.Cartesian3.fromDegrees(
@@ -106,7 +144,8 @@ class CesiumTool {
       container: viewer.container,
       scene: viewer.scene,
       transform: tileset.modelMatrix,
-      boundingSphere: tileset.boundingSphere
+      boundingSphere: tileset.boundingSphere,
+      originOffset: tileset.boundingSphere.center // 可选, 是控件的原点偏移量cartesian值
     });
     transformEditor.viewModel.activate();
   }
