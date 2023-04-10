@@ -1273,7 +1273,7 @@ RotationEditor.prototype.update = function () {
   var widgetOrigin = getWidgetOrigin(
     transform,
     this.originOffset,
-    widgetOriginScratch
+    widgetOriginScratch //widgetOriginScratch 是一个可重用的 Cartesian2 对象，通常用于存储 UI 组件的位置信息
   );
   modelMatrix = Cesium.Matrix4.setTranslation(
     modelMatrix,
@@ -1599,7 +1599,7 @@ ScaleEditor.prototype.handleLeftDown = function (position) {
   var camera = scene.camera;
 
   var pickedObjects = scene.drillPick(position);
-  var origin = Cesium.Matrix4.getTranslation(transform, originScratch);
+  var origin = Cesium.Matrix4.getTranslation(transform/* 要使用的矩阵 */, originScratch/* 结果 */);
 
   var pickedAxis;
   for (var i = 0; i < pickedObjects.length; i++) {
@@ -1652,8 +1652,8 @@ ScaleEditor.prototype.handleLeftDown = function (position) {
     return;
   }
   this._offsetVector = Cesium.Cartesian3.subtract(
-    startPosition,
-    origin,
+    startPosition,//鼠标点击的位置
+    origin,//减去量是变换矩阵中的偏移量
     this._offsetVector
   );
   this._dragging = true;
@@ -1950,7 +1950,7 @@ TranslationEditor.prototype.handleLeftDown = function (position) {
   var origin = Cesium.Matrix4.getTranslation(this._transform, originScratch$1);
   var dragAlongVector = TransformAxis$1.getValue(pickedAxis);
   var directionVector = Cesium.Matrix4.multiplyByPointAsVector(
-    this._fixedFrame,
+    this._fixedFrame,//固定坐标系矩阵
     dragAlongVector,
     directionScratch$1
   );
@@ -1992,27 +1992,33 @@ TranslationEditor.prototype.handleLeftDown = function (position) {
   scene.screenSpaceCameraController.enableInputs = false;
 };
 
+// 定义函数 TranslationEditor 并添加 handleMouseMove 方法
 TranslationEditor.prototype.handleMouseMove = function (position) {
+  // 如果没有拖动操作，则返回
   if (!this._dragging) {
     return;
   }
+  // 获取场景和相机对象
   var scene = this._scene;
   var camera = scene.camera;
 
+  // 利用射线相交测试获取鼠标位置对应的点坐标
   var pickedPoint = Cesium.IntersectionTests.rayPlane(
-    camera.getPickRay(position, rayScratch$2),
-    this._pickingPlane,
+    camera.getPickRay(position, rayScratch$2), // 根据鼠标位置计算相机射线
+    this._pickingPlane, // 拾取平面
     pickedPointScratch$1
   );
+  // 如果没有获取到点，则返回
   if (!Cesium.defined(pickedPoint)) {
     return;
   }
 
+  // 获取拖动向量、变换矩阵等信息
   var dragAlongVector = this._dragAlongVector;
   var origin = Cesium.Matrix4.getTranslation(this._transform, originScratch$1);
   var directionVector = Cesium.Matrix4.multiplyByPointAsVector(
-    this._fixedFrame,
-    dragAlongVector,
+    this._fixedFrame,//固定坐标系矩阵
+    dragAlongVector,//pickedAxis选择的方向轴
     directionScratch$1
   );
   var moveVector = Cesium.Cartesian3.subtract(
@@ -2020,19 +2026,22 @@ TranslationEditor.prototype.handleMouseMove = function (position) {
     origin,
     moveScratch$1
   );
+  // 计算平面投影后的移动向量
   moveVector = Cesium.Cartesian3.projectVector(
     moveVector,
     directionVector,
     moveVector
   );
   var offset = Cesium.Cartesian3.projectVector(
-    this._offsetVector,
-    directionVector,
-    offsetProjectedScratch
+    this._offsetVector,//需要投影的向量,在左键按下时记录:鼠标点击的位置-变换矩阵中的偏移量
+    directionVector,//投影到方向轴向量
+    offsetProjectedScratch//结果
   );
+  // 计算减去偏移向量后的移动向量
   moveVector = Cesium.Cartesian3.subtract(moveVector, offset, moveVector);
-
+  // 根据移动向量和原点计算出新的位置
   origin = Cesium.Cartesian3.add(origin, moveVector, origin);
+  // 调用回调函数更新位置
   this._setPositionCallback(origin);
 };
 
@@ -2167,6 +2176,7 @@ function TransformEditorViewModel(options) {
       Cesium.Math.EPSILON10
     )
   ) {
+    // 如果在地球球心即0,0,0 则将其移动到地球表面,也就是移动一个地球半径即z轴+6378137米
     position = Cesium.Cartesian3.fromDegrees(
       0,
       0,
@@ -2257,6 +2267,7 @@ function TransformEditorViewModel(options) {
       return positionObservable();
     },
     set: function set(value) {
+      // 控件的初始位置是球心*变换矩阵
       if (Cesium.Cartesian3.equals(value, this.position)) {
         return;
       }
@@ -2773,7 +2784,6 @@ var html =
  * @alias TransformEditor
  * @ionsdk
  * @constructor
- *
  * @param {Object} options 具有以下属性的对象
  * @param {Element} options.container
  * @param {Scene} options.scene 场景
@@ -7715,28 +7725,28 @@ function viewerMeasureMixin(viewer, options) {
 }
 
 export {
-  AngleUnits,//用于测量小部件的角度单位。
-  AreaMeasurement,//创建多边形面积测量。
-  AreaUnits,//用于度量小部件的面积单位。
+  AngleUnits, //用于测量小部件的角度单位。
+  AreaMeasurement, //创建多边形面积测量。
+  AreaUnits, //用于度量小部件的面积单位。
   // ClippingPlanesEditor, //裁剪平面编辑器, 在另一个文件中
   // formatOptionsFunction, //格式选项功能,未找到相关用处和源码来源
   // isPickableCallback,//未找到相关用处和源码来源
   DistanceMeasurement, //在两点之间绘制测量值。
-  DistanceUnits,//用于测量小部件的距离单位。
-  EditorMode,//平移,旋转,缩放
-  getSlope,//计算由窗口坐标定义的点处的斜率。
-  HeightMeasurement,//在选定点和该点下方的地面之间绘制测量值。
+  DistanceUnits, //用于测量小部件的距离单位。
+  EditorMode, //平移,旋转,缩放
+  getSlope, //计算由窗口坐标定义的点处的斜率。
+  HeightMeasurement, //在选定点和该点下方的地面之间绘制测量值。
   HorizontalMeasurement, //在具有相同高度的两个点之间绘制测量值。
-  Measure,//面积测量  距离测量  高度测量  水平测量  点测量  垂直测量
-  Measurement,//定义测量的抽象类。
+  Measure, //面积测量  距离测量  高度测量  水平测量  点测量  垂直测量
+  Measurement, //定义测量的抽象类。
   MeasurementMouseHandler, //用于激活和处理测量小部件的鼠标交互的辅助类。
   MeasurementSettings, //包含用于配置测量小部件基元样式的选项。
-  MeasureUnits,//用于度量小部件的度量单位。
-  MeasureViewModel,//用于进行短暂测量的小部件。
-  PointMeasurement,//绘制一个点以及该点的经度、纬度、高度和坡度。
+  MeasureUnits, //用于度量小部件的度量单位。
+  MeasureViewModel, //用于进行短暂测量的小部件。
+  PointMeasurement, //绘制一个点以及该点的经度、纬度、高度和坡度。
   PolylineMeasurement, //创建多线距离测量。
-  TransformEditor,//用于编辑对象变换的工具
-  TransformEditorViewModel,//创建交互式变换编辑器
+  TransformEditor, //用于编辑对象变换的工具,使用它必须保证模型的boundingSphere不是region类型的(region含初始位置),也就是模型的初始位置位置在0,0,0
+  TransformEditorViewModel, //创建交互式变换编辑器
   VerticalMeasurement, //在仅高度不同的两点之间绘制测量值。
   viewerMeasureMixin //将 Measure 小部件添加到 Viewer 小部件的 mixin。
 
