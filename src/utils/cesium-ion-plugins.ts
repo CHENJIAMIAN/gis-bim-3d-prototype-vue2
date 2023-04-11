@@ -2192,14 +2192,18 @@ function setHeadingPitchRoll(transform, headingPitchRoll,_center=undefined) {
   var scale = Cesium.Matrix4.getScale(transform, setHprScale);
   // debugger
  
-  const customMatrix = Cesium.Matrix4.fromRowMajorArray([
-    0, 0, 1, _center.x,
-    1, 0, 0, _center.y,
-    0, 1, 0, _center.z,
-    0, 0, 0, 1,
-    ]);
+ 
   var center = Cesium.Matrix4.multiplyByPoint(
-    _center ? customMatrix : transform,
+    _center ? (()=>{
+      const customMatrix = Cesium.Matrix4.fromRowMajorArray([
+        0, 0, 1, _center.x,
+        1, 0, 0, _center.y,
+        0, 1, 0, _center.z,
+        0, 0, 0, 1,
+        ]);
+        // debugger
+        return customMatrix;
+    })()  : transform,
     Cesium.Cartesian3.ZERO,
     setHprCenter
   );
@@ -2227,6 +2231,7 @@ function setHeadingPitchRoll(transform, headingPitchRoll,_center=undefined) {
   // 返回一个新的模型矩阵，它由平移、旋转、缩放三部分构成
   // 正确:Matrix3 {0: -0, 1: 1, 2: 0, 3: -6.705708204275834e-12, 4: -0, 5: 1, 6: 1, 7: 0, 8: 6.705708204275834e-12, x: 0.49999999999832356, y: 0.49999999999832356, z: 0.5000000000016764, w: 0.5000000000016764}
   // 错误:Matrix3 {0: 0, 1: 1, 2: 0, 3: -1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 1, x: 0, y: 0, z: 0.7071067811865475, w: 0.7071067811865476}
+  console.log('setHeadingPitchRoll\n','translation',translation,  'scale ',scale,  '\nrotation\n',rotation.toString())
   return Cesium.Matrix4.fromTranslationQuaternionRotationScale(
     translation,
     rotation,
