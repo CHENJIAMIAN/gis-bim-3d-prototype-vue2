@@ -1192,6 +1192,7 @@ function getLinePrimitive(positions, axis) {
  */
 function RotationEditor(options) {
   options = Cesium.defaultValue(options, Cesium.defaultValue.EMPTY_OBJECT);
+  var tileset = options.tileset;
   var scene = options.scene;
 
   this._vectorLine1 = scene.primitives.add(
@@ -1225,6 +1226,8 @@ function RotationEditor(options) {
   this._modelMatrix = Cesium.Matrix4.clone(Cesium.Matrix4.IDENTITY);
 
   this.originOffset = options.originOffset;
+  this._tileset = tileset;
+  this._isDefinedRegion = Array.isArray(tileset.root._header.boundingVolume.region);
   this._scene = scene;
   this._setHPRCallback = options.setHeadingPitchRoll;
   this._setPositionCallback = options.setPosition;
@@ -1526,6 +1529,7 @@ function getLinePrimitive$1(axis) {
  */
 function ScaleEditor(options) {
   options = Cesium.defaultValue(options, Cesium.defaultValue.EMPTY_OBJECT);
+  var tileset = options.tileset;
   var scene = options.scene;
   var transform = options.transform;
 
@@ -1542,6 +1546,8 @@ function ScaleEditor(options) {
   this._polylineY = scene.primitives.add(getLinePrimitive$1(TransformAxis$1.Y));
   this._polylineZ = scene.primitives.add(getLinePrimitive$1(TransformAxis$1.Z));
 
+  this._tileset = tileset;
+  this._isDefinedRegion = Array.isArray(tileset.root._header.boundingVolume.region);
   this._scene = scene;
   this._canvas = scene.canvas;
   this._enableNonUniformScaling = options.enableNonUniformScaling;
@@ -1838,6 +1844,7 @@ function getLinePrimitive$2(axis) {
  */
 function TranslationEditor(options) {
   options = Cesium.defaultValue(options, Cesium.defaultValue.EMPTY_OBJECT);
+  var tileset = options.tileset;
   var scene = options.scene;
 
   this.originOffset = options.originOffset;
@@ -1846,6 +1853,8 @@ function TranslationEditor(options) {
   this._polylineY = scene.primitives.add(getLinePrimitive$2(TransformAxis$1.Y));
   this._polylineZ = scene.primitives.add(getLinePrimitive$2(TransformAxis$1.Z));
 
+  this._tileset = tileset;
+  this._isDefinedRegion = Array.isArray(tileset.root._header.boundingVolume.region);
   this._scene = scene;
   this._canvas = scene.canvas;
   this._setPositionCallback = options.setPosition;
@@ -1967,11 +1976,12 @@ TranslationEditor.prototype.handleLeftDown = function(position/* Cartesian2 {x:
   if (!Cesium.defined(pickedAxis)) {
     return;
   }
-  // debugger
 
-  // 需要判断tileset的boudingVolume是否是region类型，如果是region类型,origin应该是tileset的初始化位置
+  // 需要判断tileset的boudingVolume是否是region类型，如果是region类型,
   // 计算原点、拖动方向向量等信息
-  var origin = Cesium.Matrix4.getTranslation(this._transform, originScratch$1);/* Cartesian3 {x: 1e-7, y: 0, z: 0}*///正确的:Cartesian3 {x: 6378137, y: 0, z: 0}
+  // debugger
+  // origin应该是tileset的初始化地理位置
+  var origin = this._isDefinedRegion ? this._tileset.boundingSphere.center : Cesium.Matrix4.getTranslation(this._transform, originScratch$1);/* Cartesian3 {x: 1e-7, y: 0, z: 0}*///正确的:Cartesian3 {x: 6378137, y: 0, z: 0}
   var dragAlongVector = TransformAxis$1.getValue(pickedAxis);/* Cartesian3 {x: 0, y: 1, z: 0} */
   var directionVector = Cesium.Matrix4.multiplyByPointAsVector(/* Cartesian3 {x: 0, y: 0, z: 1} */
     this._fixedFrame,
@@ -2000,7 +2010,7 @@ TranslationEditor.prototype.handleLeftDown = function(position/* Cartesian2 {x:
   //对得到的平面法线向量进行单位化。
   // 正确的:Cartesian3 {x: 6.065176026356235e-17, y: -0.8775825618903728, z: 0}
   // 错误的:Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0}
-  debugger
+  // debugger
   Cesium.Cartesian3.normalize(planeNormal, planeNormal);/* Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0} */
   // 正确的:Cartesian3 {x: 6.911231250187369e-17, y: -1, z: 0}
   // 错误的:Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0}
@@ -2047,7 +2057,10 @@ TranslationEditor.prototype.handleLeftDown = function(position/* Cartesian2 {x:
   // 正确的:Cartesian3 {x: 6378137.477108554, y: 3.297407548573398e-17, z: -0.8687651312908162} 减去Cartesian3 {x: 6378137, y: 0, z: 0}
   // 等于Cartesian3 {x: 0.4771085539832711, y: 3.297407548573398e-17, z: -0.8687651312908162}
   // 鼠标于地面的交点减去相机的位置 减去 物体原来的位置
+  console.log('TranslationEditor.prototype.handleLeftDown offsetVector', offsetVector)
   Cesium.Cartesian3.subtract(offsetVector, origin, offsetVector);/* 基本没变 */
+  console.log('TranslationEditor.prototype.handleLeftDown origin', origin)
+  console.log('TranslationEditor.prototype.handleLeftDown offsetVector', offsetVector)
   // 错误的:Cartesian3 {x: 11435.058802070562, y: 2933.4513176754117, z: 7300480.142597623} 减去Cartesian3 {x: 1e-7, y: 0, z: 0}
   // 等于:Cartesian3 {x: 11435.058801970561, y: 2933.4513176754117, z: 7300480.142597623}
   this._dragging = true;
@@ -2084,13 +2097,13 @@ TranslationEditor.prototype.handleMouseMove = function (position) {
 
   // 获取拖动向量、变换矩阵等信息
   var dragAlongVector = this._dragAlongVector;/* Cartesian3 {x: 0, y: 1, z: 0} */
-  var origin = Cesium.Matrix4.getTranslation(this._transform, originScratch$1);/* Cartesian3 {x: 1e-7, y: 0, z: 0} */
+  // debugger
+  var origin = this._isDefinedRegion ? this._tileset.boundingSphere.center : Cesium.Matrix4.getTranslation(this._transform, originScratch$1);/* Cartesian3 {x: 1e-7, y: 0, z: 0}*///正确的:Cartesian3 {x: 6378137, y: 0, z: 0}
   var directionVector = Cesium.Matrix4.multiplyByPointAsVector(/* Cartesian3 {x: 0, y: 0, z: 1} */
     this._fixedFrame,//固定坐标系矩阵
     dragAlongVector,//pickedAxis选择的方向轴
     directionScratch$1
   );
-  debugger
   /* 这里可能算错了,造成moveVector太大了 origin应该太小了, pickedPoint是在地球表面的, 但是 origin是在球心的,应该让origin也就是transform在地球表面*/
   // 正确的:Cartesian3 {x: 0.6236742185428739, y: -0.007647775571603918, z: 0}
   var moveVector = Cesium.Cartesian3.subtract(/* 基本没变 */
@@ -2117,9 +2130,12 @@ TranslationEditor.prototype.handleMouseMove = function (position) {
   // 正确的:Cartesian3 {x: -0.0029684100300073624, y: 0, z: 0}
   moveVector = Cesium.Cartesian3.subtract(moveVector/* 应该是正确的 */, offset/* 错误计算了,应该是接近于0才对 */, moveVector);/* Cartesian3 {x: 0, y: 0, z: -677424.7894751439 即 5868289.06884934 - 6545713.858324484}  */
   // 根据移动向量和原点计算出新的位置
+  console.log('TranslationEditor.prototype.handleMouseMove origin', origin)
   origin = Cesium.Cartesian3.add(origin, moveVector, origin);/* Cartesian3 {x: 1e-7, y: 0, z: -677424.7894751439} */
+  console.log('TranslationEditor.prototype.handleMouseMove moveVector', moveVector)
+  console.log('TranslationEditor.prototype.handleMouseMove origin', origin)
   // 调用回调函数更新位置
-  this._setPositionCallback(origin);
+  this._setPositionCallback(this._isDefinedRegion ? moveVector : origin);
 };
 
 TranslationEditor.prototype.handleLeftUp = function () {
@@ -2162,40 +2178,55 @@ var setHprCenter = new Cesium.Cartesian3();
 var setHprTransform = new Cesium.Matrix4();
 var setHprRotation = new Cesium.Matrix3();
 
-function setHeadingPitchRoll(transform, headingPitchRoll) {
-  //>>includeStart('debug', pragmas.debug);
+function setHeadingPitchRoll(transform, headingPitchRoll,_center=undefined) {
+  // 如果transform或headingPitchRoll是undefined，则会报错提示
   Cesium.Check.defined("transform", transform);
   Cesium.Check.defined("headingPitchRoll", headingPitchRoll);
-  //>>includeEnd('debug');
 
+  // 将heading、pitch、roll转化为四元数，并分别计算出平移、缩放和中心点
   var rotationQuaternion = Cesium.Quaternion.fromHeadingPitchRoll(
     headingPitchRoll,
     setHprQuaternion
   );
   var translation = Cesium.Matrix4.getTranslation(transform, setHprTranslation);
   var scale = Cesium.Matrix4.getScale(transform, setHprScale);
+  // debugger
+ 
+  const customMatrix = Cesium.Matrix4.fromRowMajorArray([
+    0, 0, 1, _center.x,
+    1, 0, 0, _center.y,
+    0, 1, 0, _center.z,
+    0, 0, 0, 1,
+    ]);
   var center = Cesium.Matrix4.multiplyByPoint(
-    transform,
+    _center ? customMatrix : transform,
     Cesium.Cartesian3.ZERO,
     setHprCenter
   );
+
+  // 计算回退变换
   var backTransform = Cesium.Transforms.eastNorthUpToFixedFrame(
     center,
     undefined,
     setHprTransform
   );
 
+  // 获取回退变换的旋转矩阵和四元数
   var rotationFixed = Cesium.Matrix4.getMatrix3(backTransform, setHprRotation);
   var quaternionFixed = Cesium.Quaternion.fromRotationMatrix(
     rotationFixed,
     setHprQuaternion2
   );
+  // 将旋转矩阵与从heading、pitch、roll转换而来的四元数进行乘法运算
   var rotation = Cesium.Quaternion.multiply(
     quaternionFixed,
     rotationQuaternion,
     rotationFixed
   );
 
+  // 返回一个新的模型矩阵，它由平移、旋转、缩放三部分构成
+  // 正确:Matrix3 {0: -0, 1: 1, 2: 0, 3: -6.705708204275834e-12, 4: -0, 5: 1, 6: 1, 7: 0, 8: 6.705708204275834e-12, x: 0.49999999999832356, y: 0.49999999999832356, z: 0.5000000000016764, w: 0.5000000000016764}
+  // 错误:Matrix3 {0: 0, 1: 1, 2: 0, 3: -1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 1, x: 0, y: 0, z: 0.7071067811865475, w: 0.7071067811865476}
   return Cesium.Matrix4.fromTranslationQuaternionRotationScale(
     translation,
     rotation,
@@ -2203,6 +2234,7 @@ function setHeadingPitchRoll(transform, headingPitchRoll) {
     transform
   );
 }
+
 
 /**
  * 创建交互式变换编辑器
@@ -2220,18 +2252,25 @@ function TransformEditorViewModel(options) {
   options = Cesium.defaultValue(options, Cesium.defaultValue.EMPTY_OBJECT);
 
   //>>includeStart('debug', pragmas.debug);
+  Cesium.Check.defined("options.tileset", options.tileset);
   Cesium.Check.defined("options.scene", options.scene);
   Cesium.Check.defined("options.transform", options.transform);
   Cesium.Check.defined("options.boundingSphere", options.boundingSphere);
   //>>includeEnd('debug');
 
+  var tileset = options.tileset;
   var scene = options.scene;
   var transform = options.transform;
   var boundingSphere = options.boundingSphere.clone();
 
+  // boundingVolume 有几种类型,除了region带初始位置, 其他的如果tileset.json没有transform属性则默认在球心,否则被transform变换到正确位置
+  this.tileset = tileset;
+  this.isDefinedRegion = Array.isArray(tileset.root._header.boundingVolume.region);
+
   var originOffset = Cesium.defaultValue(
     options.originOffset,
-    Cesium.Cartesian3.ZERO
+    // 如果tileset带位置,则偏移控件位置到boundingSphere的中心, 否则设为0后面再根据transform变换
+    this.isDefinedRegion ? tileset.boundingSphere.center:Cesium.Cartesian3.ZERO
   );
 
   var position = Cesium.Matrix4.getTranslation(
@@ -2246,12 +2285,13 @@ function TransformEditorViewModel(options) {
   );
   var scale = Cesium.Matrix4.getScale(transform, new Cesium.Cartesian3());
 
+
   if (
     Cesium.Cartesian3.equalsEpsilon(
       position,
       Cesium.Cartesian3.ZERO,
       Cesium.Math.EPSILON10
-    )
+    ) && !this.isDefinedRegion
   ) {
     // 如果在地球球心即0,0,0 则将其移动到地球表面,也就是移动一个地球半径即z轴+6378137米
     position = Cesium.Cartesian3.fromDegrees(
@@ -2351,8 +2391,14 @@ function TransformEditorViewModel(options) {
       var position = Cesium.Cartesian3.clone(value, this.position);
       positionObservable(position);
       var transform = this._transform;
+      console.log('setPosition Before','transform\n',transform.toString())
       transform = Cesium.Matrix4.setTranslation(transform, position, transform);
+      console.log('position',position)
+      console.log('setPosition After','transform\n',transform.toString())
+      this.isDefinedRegion?
+      setHeadingPitchRoll(transform, this.headingPitchRoll,this.tileset.boundingSphere.center):
       setHeadingPitchRoll(transform, this.headingPitchRoll);
+      console.log('After setHeadingPitchRoll','transform\n',transform.toString())
       if (scene.requestRenderMode) {
         scene.requestRender();
       }
@@ -2392,7 +2438,7 @@ function TransformEditorViewModel(options) {
       }
       var hpr = Cesium.HeadingPitchRoll.clone(value, this.headingPitchRoll);
       headingPitchRollObservable(hpr);
-      setHeadingPitchRoll(this._transform, hpr);
+      setHeadingPitchRoll(this._transform, hpr, this.tileset);
       if (scene.requestRenderMode) {
         scene.requestRender();
       }
@@ -2455,29 +2501,30 @@ function TransformEditorViewModel(options) {
 
   var that = this;
   this._rotationEditor = new RotationEditor({
+    tileset:tileset,
     scene: scene,
     transform: transform,
     radius: initialRadius,
     originOffset: originOffset,
     setPosition: function setPosition(value) {
       that.position = value;
-      console.log('RotationEditor setPosition',value)
     },
     setHeadingPitchRoll: function setHeadingPitchRoll(value) {
       that.headingPitchRoll = value;
     }
   });
   this._translationEditor = new TranslationEditor({
+    tileset:tileset,
     scene: scene,
     transform: transform,
     radius: initialRadius,
     originOffset: originOffset,
     setPosition: function setPosition(value) {
       that.position = value;
-      console.log('TranslationEditor setPosition',value)
     }
   });
   this._scaleEditor = new ScaleEditor({
+    tileset:tileset,
     scene: scene,
     transform: transform,
     enableNonUniformScaling: enableNonUniformScaling,
@@ -2488,7 +2535,6 @@ function TransformEditorViewModel(options) {
     },
     setPosition: function setPosition(value) {
       that.position = value;
-      console.log('TranslationEditor setPosition',value)
     }
   });
 
@@ -2876,6 +2922,7 @@ function TransformEditor(options) {
 
   //>>includeStart('debug', pragmas.debug);
   Cesium.Check.defined("options.container", options.container);
+  Cesium.Check.defined("options.tileset", options.tileset);
   Cesium.Check.defined("options.scene", options.scene);
   Cesium.Check.defined("options.transform", options.transform);
   Cesium.Check.defined("options.boundingSphere", options.boundingSphere);
