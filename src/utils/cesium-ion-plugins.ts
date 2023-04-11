@@ -1885,28 +1885,36 @@ Object.defineProperties(TranslationEditor.prototype, {
   }
 });
 
+// 更新控件位置, 基于transform和设置的控件偏移originOffset
 TranslationEditor.prototype.update = function () {
+  // 获取翻译编辑器的变换和椭球体参数
   var transform = this._transform;
   var ellipsoid = this._scene.mapProjection.ellipsoid;
 
+  // 获取模型矩阵的平移变换
   var modelOrigin = Cesium.Matrix4.getTranslation(transform, originScratch$1);
+  // 获取widget的位置（及偏置），并将其赋值给widgetOrigin
   var widgetOrigin = getWidgetOrigin(
     transform,
     this.originOffset,
     widgetOriginScratch$2
   );
 
+  // 计算控件大小，radius为控件半径
   var length =
     this._radius * Cesium.Matrix4.getMaximumScale(this._transform) * 1.5;
+  // 将变换转换为heading、pitch、roll，并使用fixedFrame指定的参考系进行固定帧转换
   var hpr = Cesium.Transforms.fixedFrameToHeadingPitchRoll(
     this._transform,
     ellipsoid,
     undefined,
     this._hpr
   );
-  hpr.pitch = 0;
-  hpr.roll = 0;
+  // 为了让物体保持水平或垂直，我们会将俯仰角和翻滚角设为 0
+  hpr.pitch = 0; // 将pitch设为0 俯仰角（pitch）
+  hpr.roll = 0; // 将roll设为0 翻滚角（roll）
 
+  // 将heading、pitch、roll转换为fixedFrame，返回一个新的矩阵
   var hprToFF = Cesium.Transforms.headingPitchRollToFixedFrame(
     modelOrigin,
     hpr,
@@ -1914,85 +1922,146 @@ TranslationEditor.prototype.update = function () {
     undefined,
     this._fixedFrame
   );
+  // 将widgetOrigin添加到该矩阵中，以便在更新时考虑位移
   hprToFF = Cesium.Matrix4.setTranslation(hprToFF, widgetOrigin, hprToFF);
+  // 将hpr转换后乘以控件大小，并与模型矩阵相乘，得到一个新的模型矩阵
   var modelMatrix = Cesium.Matrix4.multiplyByUniformScale(
     hprToFF,
     length,
     this._modelMatrix
   );
 
+  // 将更新后的模型矩阵赋值给三个Polyline的modelMatrix属性
   this._polylineX.modelMatrix = modelMatrix;
   this._polylineY.modelMatrix = modelMatrix;
   this._polylineZ.modelMatrix = modelMatrix;
 };
 
-TranslationEditor.prototype.handleLeftDown = function (position) {
+
+/**
+ * 处理鼠标左键按下时的操作,实现了鼠标左键按下时选中拖动轴并计算原点、拖动方向向量等信息，最后根据鼠标点击位置计算偏移向量，并启用拖动标志位，并禁用场景中的默认鼠标事件响应。
+ * @param {Cesium.Cartesian2} position - 鼠标点击位置
+ */
+TranslationEditor.prototype.handleLeftDown = function(position/* Cartesian2 {x: 493, y: 100} */) {
+  // 获取场景和相机对象
   var scene = this._scene;
   var camera = scene.camera;
 
+  // 通过 drillPick 方法获取指定位置的对象列表
   var pickedObjects = scene.drillPick(position);
 
   var pickedAxis;
+
+  // 遍历选中对象，找到选中的拖动轴
   for (var i = 0; i < pickedObjects.length; i++) {
     var object = pickedObjects[i];
-    if (
-      Cesium.defined(object.id) &&
-      Cesium.defined(TransformAxis$1[object.id])
-    ) {
-      pickedAxis = object.id;
+
+    // 判断物体ID是否存在，并且该物体是否为拖动轴
+    if (Cesium.defined(object.id) && Cesium.defined(TransformAxis$1[object.id])) {
+      pickedAxis = object.id; // 找到拖动轴
       break;
     }
   }
+
+  // 如果没有找到选择的拖动轴，则返回
   if (!Cesium.defined(pickedAxis)) {
     return;
   }
+  // debugger
 
-  var origin = Cesium.Matrix4.getTranslation(this._transform, originScratch$1);
-  var dragAlongVector = TransformAxis$1.getValue(pickedAxis);
-  var directionVector = Cesium.Matrix4.multiplyByPointAsVector(
-    this._fixedFrame,//固定坐标系矩阵
+  // 需要判断tileset的boudingVolume是否是region类型，如果是region类型,origin应该是tileset的初始化位置
+  // 计算原点、拖动方向向量等信息
+  var origin = Cesium.Matrix4.getTranslation(this._transform, originScratch$1);/* Cartesian3 {x: 1e-7, y: 0, z: 0}*///正确的:Cartesian3 {x: 6378137, y: 0, z: 0}
+  var dragAlongVector = TransformAxis$1.getValue(pickedAxis);/* Cartesian3 {x: 0, y: 1, z: 0} */
+  var directionVector = Cesium.Matrix4.multiplyByPointAsVector(/* Cartesian3 {x: 0, y: 0, z: 1} */
+    this._fixedFrame,
     dragAlongVector,
     directionScratch$1
   );
 
-  //Finds a picking plane that includes the dragged axis and is somewhat perpendicular to the camera
-  var planeNormal = planeNormalScratch$1;
+  // 计算拾取平面,//找到一个拾取平面，该平面包括拖动的轴并且与相机有点垂直
+  var planeNormal = planeNormalScratch$1;/* Cartesian3 {x: 0, y: 0, z: 0} */
   if (Math.abs(Cesium.Cartesian3.dot(camera.upWC, directionVector)) > 0.7) {
-    // if up and the direction are close to parellel, the dot product will be close to 1
-    planeNormal = Cesium.Cartesian3.cross(
-      camera.rightWC,
-      directionVector,
-      planeNormal
+    // 使用相机的右向量作为平面法线向量
+    planeNormal = Cesium.Cartesian3.cross(/* Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0} */
+    camera.rightWC,/* Cartesian3 {x: 0.9686356343768743, y: 0.2484854277725564, z: 6.938893903907228e-17}      */
+    directionVector,/* Cartesian3 {x: 0, y: 0, z: 1} */
+    planeNormal
     );
   } else {
+    // 如果相机的上方向和拖动方向接近平行，则点积将接近 1
     planeNormal = Cesium.Cartesian3.cross(
-      camera.upWC,
-      directionVector,
-      planeNormal
+      //使用相机的上向量可以更好地辅助计算对象的移动方向，因为它更容易与拖动方向垂直。而使用相机的右向量会使辅助方向更容易与拖动方向平行，从而可能导致移动方向的偏差更大。
+      camera.upWC,/* Cartesian3 {x: 0.09030134217117318, y: -0.35200896343555316, z: 0.9316304832191313} */
+      directionVector,/* Cartesian3 {x: 0, y: 0, z: 1} */
+      planeNormal//叉积返回的是一个新的向量，该向量垂直于原来的两个向量，并且大小等于两个向量构成的平行四边形的面积
     );
   }
-  Cesium.Cartesian3.normalize(planeNormal, planeNormal);
-
+  //对得到的平面法线向量进行单位化。
+  // 正确的:Cartesian3 {x: 6.065176026356235e-17, y: -0.8775825618903728, z: 0}
+  // 错误的:Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0}
+  debugger
+  Cesium.Cartesian3.normalize(planeNormal, planeNormal);/* Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0} */
+  // 正确的:Cartesian3 {x: 6.911231250187369e-17, y: -1, z: 0}
+  // 错误的:Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0}
+  /* 这个平面本应该是类似在地面上方的切平面 这里应该错误计算了 */
+  /* 
+    正确的
+    distance:-4.408077975231106e-10
+    normal:Cartesian3 {x: 6.911231250177138e-17, y: -1, z: 0} 
+  */
+  /* 
+    错误的
+    distance: -2.4848542777255636e-8
+    normal: Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0}
+  */
   var pickingPlane = Cesium.Plane.fromPointNormal(
+    // 正确的:Cartesian3 {x: 6378137, y: 0, z: 0}
+    // 错误的:Cartesian3 {x: 1e-7, y: 0, z: 0}
     origin,
+    // 正确的:Cartesian3 {x: 6.911231250187369e-17, y: -1, z: 0}
+    // 错误的:Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0}
     planeNormal,
     this._pickingPlane
   );
+
+  // 计算射线和平面的交点。
+  // 计算偏移向量,用于mousemove确定时被减
+  //正确的:Cartesian3 {x: 6378137.477108554, y: 3.297407548573398e-17, z: -0.8687651312908162}
+  //错误的 Cartesian3 {x: 11435.058802070562, y: 2933.4513176754117, z: 7300480.142597623}
   var offsetVector = Cesium.IntersectionTests.rayPlane(
-    camera.getPickRay(position, rayScratch$2),
+    camera.getPickRay(position, rayScratch$2),/* 应该是正确的 *///获得从相机经过点 position 的射线 
+    // 正确的: origin: Cartesian3 {x: 6378137.477108554, y: -1.0990681602344112e-16, z: -0.868765131290899}
+    // 错误的: origin: Cartesian3 {x: 1215047.8031673573, y: -4736449.17599158, z: 4081559.822144856}
     pickingPlane,
+    // 错误的:normal: Cartesian3 {x: 0.2484854277725564, y: -0.9686356343768743, z: 0}
     this._offsetVector
   );
+
+  // 如果没有获取到偏移向量，则返回
   if (!Cesium.defined(offsetVector)) {
     return;
   }
-  Cesium.Cartesian3.subtract(offsetVector, origin, offsetVector);
+
+  // 计算偏移向量并启用拖动标志位，并禁用场景中的默认鼠标事件响应。
+  // 正确的:Cartesian3 {x: 6378137.477108554, y: 3.297407548573398e-17, z: -0.8687651312908162} 减去Cartesian3 {x: 6378137, y: 0, z: 0}
+  // 等于Cartesian3 {x: 0.4771085539832711, y: 3.297407548573398e-17, z: -0.8687651312908162}
+  // 鼠标于地面的交点减去相机的位置 减去 物体原来的位置
+  Cesium.Cartesian3.subtract(offsetVector, origin, offsetVector);/* 基本没变 */
+  // 错误的:Cartesian3 {x: 11435.058802070562, y: 2933.4513176754117, z: 7300480.142597623} 减去Cartesian3 {x: 1e-7, y: 0, z: 0}
+  // 等于:Cartesian3 {x: 11435.058801970561, y: 2933.4513176754117, z: 7300480.142597623}
   this._dragging = true;
   this._dragAlongVector = dragAlongVector;
   scene.screenSpaceCameraController.enableInputs = false;
+
 };
 
-// 定义函数 TranslationEditor 并添加 handleMouseMove 方法
+
+
+/**
+ * 定义函数 TranslationEditor 并添加 handleMouseMove 方法
+ * @param {Cesium.Cartesian2} position - 鼠标点击位置
+ */
 TranslationEditor.prototype.handleMouseMove = function (position) {
   // 如果没有拖动操作，则返回
   if (!this._dragging) {
@@ -2002,8 +2071,8 @@ TranslationEditor.prototype.handleMouseMove = function (position) {
   var scene = this._scene;
   var camera = scene.camera;
 
-  // 利用射线相交测试获取鼠标位置对应的点坐标
-  var pickedPoint = Cesium.IntersectionTests.rayPlane(
+  // 利用射线相交测试获取鼠标位置对应的点坐标, 射线只有跟一个面相交才能获取到点坐标,取哪个面呢?
+  var pickedPoint = Cesium.IntersectionTests.rayPlane(/* Cartesian3 {x: 2498711.721292728, y: 640997.9448517002, z: 5868289.06884934} */
     camera.getPickRay(position, rayScratch$2), // 根据鼠标位置计算相机射线
     this._pickingPlane, // 拾取平面
     pickedPointScratch$1
@@ -2014,33 +2083,41 @@ TranslationEditor.prototype.handleMouseMove = function (position) {
   }
 
   // 获取拖动向量、变换矩阵等信息
-  var dragAlongVector = this._dragAlongVector;
-  var origin = Cesium.Matrix4.getTranslation(this._transform, originScratch$1);
-  var directionVector = Cesium.Matrix4.multiplyByPointAsVector(
+  var dragAlongVector = this._dragAlongVector;/* Cartesian3 {x: 0, y: 1, z: 0} */
+  var origin = Cesium.Matrix4.getTranslation(this._transform, originScratch$1);/* Cartesian3 {x: 1e-7, y: 0, z: 0} */
+  var directionVector = Cesium.Matrix4.multiplyByPointAsVector(/* Cartesian3 {x: 0, y: 0, z: 1} */
     this._fixedFrame,//固定坐标系矩阵
     dragAlongVector,//pickedAxis选择的方向轴
     directionScratch$1
   );
-  var moveVector = Cesium.Cartesian3.subtract(
-    pickedPoint,
-    origin,
+  debugger
+  /* 这里可能算错了,造成moveVector太大了 origin应该太小了, pickedPoint是在地球表面的, 但是 origin是在球心的,应该让origin也就是transform在地球表面*/
+  // 正确的:Cartesian3 {x: 0.6236742185428739, y: -0.007647775571603918, z: 0}
+  var moveVector = Cesium.Cartesian3.subtract(/* 基本没变 */
+    pickedPoint,/* 正确的:Cartesian3 {x: 6378137.623674219, y: -0.007647775571603918, z: 0} */
+    origin,/* 正确的:Cartesian3 {x: 6378137, y: 0, z: 0} */
     moveScratch$1
   );
-  // 计算平面投影后的移动向量
-  moveVector = Cesium.Cartesian3.projectVector(
+  // 计算投影在辅助轴上的量,也就是只保留该轴的量
+  // 正确的:Cartesian3 {x: 0.6236742185428739, y: 0, z: 0}
+  moveVector = Cesium.Cartesian3.projectVector(/* Cartesian3 {x: 0, y: 0, z: 5868289.06884934} */
     moveVector,
     directionVector,
     moveVector
   );
-  var offset = Cesium.Cartesian3.projectVector(
-    this._offsetVector,//需要投影的向量,在左键按下时记录:鼠标点击的位置-变换矩阵中的偏移量
-    directionVector,//投影到方向轴向量
+  // 正确的:Cartesian3 {x: 0.6266426285728812, y: 0, z: 0}
+  var offset = Cesium.Cartesian3.projectVector(/* Cartesian3 {x: 0, y: 0, z: 6545713.858324484} */
+    // 需要投影的向量,在左键按下时记录:鼠标点击的位置 减去 变换矩阵中的偏移量
+    // 正确的:Cartesian3 {x: 0.6266426285728812, y: -0.007645447965779354, z: 0}
+    this._offsetVector,// /* Cartesian3 {x: 15411.653752620448, y: 3953.572674275376, z: 6545713.858324484} */
+    directionVector,//投影到方向轴向量/* Cartesian3 {x: 0, y: 0, z: 1} */
     offsetProjectedScratch//结果
   );
   // 计算减去偏移向量后的移动向量
-  moveVector = Cesium.Cartesian3.subtract(moveVector, offset, moveVector);
+  // 正确的:Cartesian3 {x: -0.0029684100300073624, y: 0, z: 0}
+  moveVector = Cesium.Cartesian3.subtract(moveVector/* 应该是正确的 */, offset/* 错误计算了,应该是接近于0才对 */, moveVector);/* Cartesian3 {x: 0, y: 0, z: -677424.7894751439 即 5868289.06884934 - 6545713.858324484}  */
   // 根据移动向量和原点计算出新的位置
-  origin = Cesium.Cartesian3.add(origin, moveVector, origin);
+  origin = Cesium.Cartesian3.add(origin, moveVector, origin);/* Cartesian3 {x: 1e-7, y: 0, z: -677424.7894751439} */
   // 调用回调函数更新位置
   this._setPositionCallback(origin);
 };
@@ -2287,12 +2364,13 @@ function TransformEditorViewModel(options) {
       var longitude = Cesium.Math.toDegrees(carto.longitude);
       var latitude = Cesium.Math.toDegrees(carto.latitude);
 
+      // 更新视图的经纬度高度
       // $("#tileset_longitude").val(longitude);
       // $("#tileset_latitude").val(latitude);
       // $("#tileset_altitude").val(carto.height);
-      console.log("longitude: " + longitude);
-      console.log("latitude: " + latitude);
-      console.log("altitude: " + carto.height);
+      // console.log("longitude: " + longitude);
+      // console.log("latitude: " + latitude);
+      // console.log("altitude: " + carto.height);
     }
   });
 
@@ -2383,6 +2461,7 @@ function TransformEditorViewModel(options) {
     originOffset: originOffset,
     setPosition: function setPosition(value) {
       that.position = value;
+      console.log('RotationEditor setPosition',value)
     },
     setHeadingPitchRoll: function setHeadingPitchRoll(value) {
       that.headingPitchRoll = value;
@@ -2395,6 +2474,7 @@ function TransformEditorViewModel(options) {
     originOffset: originOffset,
     setPosition: function setPosition(value) {
       that.position = value;
+      console.log('TranslationEditor setPosition',value)
     }
   });
   this._scaleEditor = new ScaleEditor({
@@ -2408,6 +2488,7 @@ function TransformEditorViewModel(options) {
     },
     setPosition: function setPosition(value) {
       that.position = value;
+      console.log('TranslationEditor setPosition',value)
     }
   });
 
@@ -2431,7 +2512,7 @@ function TransformEditorViewModel(options) {
 
 Object.defineProperties(TransformEditorViewModel.prototype, {
   /**
-   * Gets and sets the offset of the transform editor UI components from the origin as defined by the transform
+   * 获取和设置转换编辑器 UI 组件相对于转换定义的原点的偏移量
    * @type {Cartesian3}
    * @memberof TransformEditorViewModel
    */
@@ -2453,8 +2534,8 @@ Object.defineProperties(TransformEditorViewModel.prototype, {
 });
 
 /**
- * Sets the originOffset based on the Cartesian3 position in world coordinates
- * @param {Cartesian3} position
+ * 根据世界坐标中的 Cartesian3 位置设置 originOffset
+ * @param {Cartesian3} 位置
  */
 TransformEditorViewModel.prototype.setOriginPosition = function (position) {
   //>>includeStart('debug', pragmas.debug);
