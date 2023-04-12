@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
+    "serve tileset": "cd D:\\垃圾箱\\Cesium-1.100\\Specs\\Data\\Cesium3DTiles && serve -C",    
     "build": "run-p type-check build-only",
     "preview": "vite preview --port 4173",
     "test:unit": "vitest --environment jsdom",
