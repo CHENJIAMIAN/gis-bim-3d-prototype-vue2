@@ -16,12 +16,16 @@
     console.log("createTransformEditor后:");
     console.log(tileset.modelMatrix.toString());
   };
+  const storeCamera = () => {
+    cesiumTool.storeCamera();
+  };
 </script>
 
 <template>
   <main class="relative">
     <div id="cesiumContainer"></div>
     <div id="toolbar">
+      <el-button theme="primary" @click="storeCamera">storeCamera</el-button>
       <el-button theme="primary" @click="onClickFlyTo">fly to</el-button>
       <el-button theme="primary" @click="onCreateTransformEditor">
         createTransformEditor
@@ -74,15 +78,10 @@
     </div>
     <pre class="text-black ml-80">
             按效果排行
-            1.GeoJson,'Cesium地球加载粗模'
-              tileset的位置不正确,不知道为什么, 离地球表面很远
-            2.GLTF模型加载
-            3.3DTiles,BIM模型加载
-            4.模型的方位矫正
-            5.测点数据可视化
             6.编写告警数据弹出面板
             7.编写Cesium模型换色功能[满足可变色]
             8.编写Cesium楼之间的管线潮流效果[满足有楼之间的潮流关系]
+                https://sandcastle.cesium.com/gallery/Underground%20Color.html
             9.编写Cesium删粗模功能[满足楼可换]
             10.编写Cesium移动精模楼体gltf（建模人员建）的功能
             11.编写告警数据弹出面板关联数据功能[满足可关联告警数据]

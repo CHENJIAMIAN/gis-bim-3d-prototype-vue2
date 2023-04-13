@@ -18,25 +18,191 @@ window.Cesium = Cesium;
 /*---------------------------------------------------------------------------------------*/
 const tileUrl =
   "http://localhost:3000/Instanced/InstancedGltfExternal/tileset.json";
-  // "http://localhost:3000/ionTileset/tileset.json";
+// "http://localhost:3000/ionTileset/tileset.json";
 
 /*---------------------------------------------------------------------------------------*/
 class CesiumTool {
+  viewer: Viewer;
   constructor() {
     this.viewer = null;
     const { viewer } = this;
 
     this.createCesium("cesiumContainer");
-    this.viewer.scene.primitives.add(Cesium.createOsmBuildings());
+    // this.viewer.scene.primitives.add(Cesium.createOsmBuildings());
     this.loadNavigatorPlugin();
     this.customBaseLayerPicker(); //添加高德底图
-    this.setCesiumCamera(); //重置HomeButton位置
-    this.load3DTileset().then((tileset) => {
-      const center = tileset.boundingSphere.center;
-      console.log("tileset center", center);
-      this.createTransformEditor(tileset);
-      console.log("createTransformEditor后的modelMatrix:");
-      console.log(tileset.modelMatrix.toString());
+    // this.setCesiumCamera(); //重置HomeButton位置
+    // this.createCityModelByGeojson();
+    // this.loadGlbModel(113.94150864076296, 22.5154337740315, 0);
+    this.addMonitorPoint();
+    // this.load3DTileset().then((tileset) => {
+    //   const center = tileset.boundingSphere.center;
+    //   console.log("tileset center", center);
+    //   this.createTransformEditor(tileset);
+    //   console.log("createTransformEditor后的modelMatrix:");
+    //   console.log(tileset.modelMatrix.toString());
+    // });
+  }
+
+  addMonitorPoint() {
+    const { viewer } = this;
+    const pinBuilder = new Cesium.PinBuilder();
+
+    const bluePin = viewer.entities.add({
+      name: "Blank blue pin",
+      position: Cesium.Cartesian3.fromDegrees(113.9470726, 22.5108667),
+      billboard: {
+        image: pinBuilder.fromColor(Cesium.Color.ROYALBLUE, 48).toDataURL(),
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+      }
+    });
+
+    const questionPin = viewer.entities.add({
+      name: "Question mark",
+      position: Cesium.Cartesian3.fromDegrees(113.94698529, 22.5120071),
+      billboard: {
+        image: pinBuilder.fromText("测点1", Cesium.Color.BLACK, 100).toDataURL(),
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+      }
+    });
+
+    const url = Cesium.buildModuleUrl("Assets/Textures/maki/grocery.png");
+    const groceryPin = Promise.resolve(
+      pinBuilder.fromUrl(url, Cesium.Color.GREEN, 48)
+    ).then(function (canvas) {
+      return viewer.entities.add({
+        name: "Grocery store",
+        position: Cesium.Cartesian3.fromDegrees(113.94605217, 22.511786),
+        billboard: {
+          image: canvas.toDataURL(),
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+        }
+      });
+    });
+
+    //从 maki 图标集创建一个代表医院的红色图钉。
+    const hospitalPin = Promise.resolve(
+      pinBuilder.fromMakiIconId("hospital", Cesium.Color.RED, 48)
+    ).then(function (canvas) {
+      return viewer.entities.add({
+        name: "Hospital",
+        position: Cesium.Cartesian3.fromDegrees(113.94698606, 22.5111275),
+        billboard: {
+          image: canvas.toDataURL(),
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM
+        }
+      });
+    });
+
+    //由于一些引脚是异步创建的，因此在缩放之前等待它们全部加载/
+    Promise.all([bluePin, questionPin, groceryPin, hospitalPin]).then(function (
+      pins
+    ) {
+      viewer.zoomTo(pins);
+    });
+  }
+
+  loadGlbModel(longitude, latitude, height) {
+    const { viewer } = this;
+    const woodTower = {
+      name: "Wood Tower",
+      height: 0.0,
+      model: {
+        uri: "http://localhost:3000/Wood_Tower.glb"
+      }
+    };
+    const entity = (window.glbEntity = viewer.entities.add(woodTower));
+    entity.position = Cesium.Cartesian3.fromDegrees(
+      longitude,
+      latitude,
+      height + entity.height
+    );
+  }
+
+  _savedCameraState: CameraState = {};
+  storeCamera() {
+    const { viewer } = this;
+    // 获取当前摄像机状态
+    var cameraPosition = viewer.camera.position.clone();
+    var cameraDirection = viewer.camera.direction.clone();
+    var cameraUp = viewer.camera.up.clone();
+
+    // 保存状态
+    this._savedCameraState = {
+      position: cameraPosition.clone(),
+      direction: cameraDirection.clone(),
+      up: cameraUp.clone(),
+      frustum: viewer.camera.frustum.clone(),
+      defaultMoveAmount: viewer.camera.defaultMoveAmount,
+      maximumMovementRatio: viewer.camera.maximumMovementRatio,
+      transform: viewer.camera.transform.clone()
+    };
+    console.log(
+      "storeCamera",
+      this._savedCameraState,
+      JSON.stringify(this._savedCameraState)
+    );
+  }
+
+  restoreCamera(savedCameraStateIn) {
+    const { viewer, _savedCameraState } = this;
+    const savedCameraState = savedCameraStateIn || _savedCameraState;
+    // 恢复状态
+    viewer.camera.setView({
+      destination: savedCameraState.position,
+      orientation: {
+        direction: savedCameraState.direction,
+        up: savedCameraState.up
+      },
+      frustum: savedCameraState.frustum,
+      defaultMoveAmount: savedCameraState.defaultMoveAmount,
+      maximumMovementRatio: savedCameraState.maximumMovementRatio,
+      transform: savedCameraState.transform
+    });
+  }
+
+  // 并根据给的property里带height的geojson文件,生成城市粗模
+  createCityModelByGeojson() {
+    const { viewer } = this;
+
+    var dataSource = new Cesium.GeoJsonDataSource();
+    var promise = dataSource.load(
+      "http://localhost:3000/从优锘爬的南山建筑_sub.geojson"
+    );
+    promise.then((dataSource) => {
+      viewer.dataSources.add(dataSource);
+      window.dataSource = dataSource;
+      var entities = dataSource.entities.values;
+
+      // const colorHash = {};
+      for (let i = 0; i < entities.length; i++) {
+        //   //对于每个实体，根据状态名称创建随机颜色。
+        //   //有些状态有多个实体，因此我们将颜色存储在哈希中，以便我们对整个状态使用相同的颜色。
+        const entity = entities[i];
+        //   const id = entity.id;
+        //   let color = colorHash[id];
+        //   if (!color) {
+        //     color = Cesium.Color.fromRandom({
+        //       alpha: 1.0
+        //     });
+        //     colorHash[id] = color;
+        //   }
+
+        //   //将多边形材质设置为我们的随机颜色。
+        //   entity.polygon.material = color;
+        //   //删除轮廓。
+        entity.polygon.outline = false;
+
+        // 根据height拉伸多边形
+        entity.polygon.extrudedHeight = entity.properties.height;
+
+        if (i === entities.length - 1) {
+          const state = JSON.parse(
+            '{"position":{"x":467.6261964221485,"y":-1654.7784893745556,"z":614.7921144040301},"direction":{"x":-0.2560678858278986,"y":0.9061417704669454,"z":-0.3366546147948367},"up":{"x":-0.09155039645111372,"y":0.3239673665237031,"z":0.9416282017533993},"frustum":{"_offCenterFrustum":{"left":-0.057735026918962574,"right":0.057735026918962574,"top":0.028867513459481287,"bottom":-0.028867513459481287,"near":0.1,"far":10000000000,"_cullingVolume":{"planes":[]},"_perspectiveMatrix":{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0},"_infinitePerspective":{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0}},"fov":1.0471975511965976,"aspectRatio":2,"near":0.1,"far":10000000000,"xOffset":0,"_xOffset":0,"yOffset":0,"_yOffset":0},"defaultMoveAmount":100000,"transform":{"0":-0.9139602054725658,"1":-0.40580382306299795,"2":0,"3":0,"4":0.15539538819007595,"5":-0.34998487655362137,"6":0.9237764120787031,"7":0,"8":-0.37487199967695717,"9":0.8442948793941614,"10":0.38293229230112996,"11":0,"12":-2392168.4065228975,"13":5387693.767515922,"14":2427245.092321965,"15":1}}'
+          );
+          this.restoreCamera(state);
+        }
+      }
     });
   }
 
@@ -148,7 +314,7 @@ class CesiumTool {
           animation: false, // 是否显示动画小部件（左下角仪表盘）
           geocoder: false, // 是否显示 geocoder 小部件（右上角查询按钮）
           vrButton: false, // 是否显示 VR 按钮
-          sceneModePicker: false, // 是否显示 3D/2D 选择器
+          sceneModePicker: !false, // 是否显示 3D/2D 选择器
           selectionIndicator: false, // 是否显示指示器组件
           timeline: false, // 是否显示时间轴
           navigationHelpButton: false, // 是否显示右上角的帮助按钮
@@ -167,6 +333,8 @@ class CesiumTool {
           // }),
         }));
     viewer.cesiumWidget.creditContainer.style.display = "none"; //隐藏版权信息
+    // 允许穿到地面下
+    viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
     // viewer.extend(Cesium.viewerCesiumInspectorMixin);//使用Inspector面板
     // viewer.scene.debugShowFramesPerSecond = true; // 显示帧率
     // viewer.scene.globe.depthTestAgainstTerrain = true; // 控制视角不转到地下（确保在地形后面的物体被正确地遮挡，只有最前端的对象可见）
@@ -296,7 +464,7 @@ class CesiumTool {
     //-1.31972,0.69884  转为经纬度
     /* 
         将经度-1.31972和纬度0.69884从弧度转换为度数，可以得到：
-        - 经度：-1.31972 × 180 / π ≈ -75.5245度
+        - 经度：-1.31972 × 180 / π ≈ 113.5245度
         - 纬度：0.69884 × 180 / π ≈ 39.9985度
         因此，这个点的地理坐标是西经75.5245度、北纬39.9985度。
          */

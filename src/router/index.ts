@@ -1,7 +1,10 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 import MainView from "../views/MainView.vue";
-
+// import AlarmManageView from "../views/AlarmManageView.vue";
+// import LineFlowView from "../views/LineFlowView.vue";
+// import MapConfigView from "../views/MapConfigView.vue";
+// import ModelManageView from "../views/ModelManageView.vue";
 Vue.use(VueRouter);
 
 const router = new VueRouter({
@@ -10,18 +13,30 @@ const router = new VueRouter({
   routes: [
     {
       path: "/",
-      name: "home",
-      component: MainView,
+      name: "MainView",
+      component: MainView
     },
     {
-      path: "/about",
-      name: "about",
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import("../views/AboutView.vue"),
+      path: "/am",
+      name: "AlarmManageView",
+      component: () => import("../views/AlarmManageView.vue")
     },
-  ],
+    {
+      path: "/lf",
+      name: "LineFlowView",
+      component: () => import("../views/LineFlowView.vue")
+    },
+    {
+      path: "/mc",
+      name: "MapConfigView",
+      component: () => import("../views/MapConfigView.vue")
+    },
+    {
+      path: "/mm",
+      name: "ModelManageView",
+      component: () => import("../views/ModelManageView.vue")
+    }
+  ]
 });
 
 export default router;
