@@ -36,6 +36,12 @@ devDependencies:
   '@vitejs/plugin-vue2-jsx':
     specifier: ^1.0.2
     version: 1.0.2(vite@3.0.2)(vue@2.7.7)
+  '@vue/babel-helper-vue-jsx-merge-props':
+    specifier: ^1.4.0
+    version: 1.4.0
+  '@vue/babel-preset-jsx':
+    specifier: ^1.4.0
+    version: 1.4.0(@babel/core@7.21.4)(vue@2.7.7)
   '@vue/eslint-config-prettier':
     specifier: ^7.0.0
     version: 7.0.0(eslint@8.5.0)(prettier@2.5.1)

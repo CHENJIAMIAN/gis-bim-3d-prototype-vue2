@@ -1,9 +1,13 @@
 import * as Cesium from "cesium";
 
+// 定义了一个名为 styleInject 的函数
 function styleInject(css, ref) {
+  // 如果 ref 参数没有传递，则将其设置为空对象
   if (ref === void 0) ref = {};
+  // 指定样式插入的位置，默认是不指定
   var insertAt = ref.insertAt;
 
+  // 如果 css 不存在或者 document 对象未定义，则直接返回，什么也不做
   if (!css || typeof document === "undefined") {
     return;
   }
@@ -12,6 +16,7 @@ function styleInject(css, ref) {
   var style = document.createElement("style");
   style.type = "text/css";
 
+  // 根据 insertAt 的值来决定在头部插入样式还是在尾部插入样式
   if (insertAt === "top") {
     if (head.firstChild) {
       head.insertBefore(style, head.firstChild);
@@ -22,6 +27,7 @@ function styleInject(css, ref) {
     head.appendChild(style);
   }
 
+  // 根据浏览器是否支持 styleSheet 属性来添加样式
   if (style.styleSheet) {
     style.styleSheet.cssText = css;
   } else {
@@ -29,8 +35,9 @@ function styleInject(css, ref) {
   }
 }
 
+
 var css =
-  ".cesium-measure-toolbar {\n    width: 40px;\n    height: 32px;\n    overflow: hidden;\n    transition: width 0.8s;\n    white-space: nowrap;\n    background: #303336;\n    border: 1px solid #444;\n    color: #edffff;\n    stroke: #edffff;\n    stroke-width: 2;\n    fill: transparent;\n}\n.cesium-measure-toolbar.expanded {\n    width: 423px;\n}\n.cesium-measure-button {\n    vertical-align: top;\n    display: inline-block;\n    border-right: 1px solid #444;\n    cursor: pointer;\n    padding: 4px 8px;\n    height: 25px;\n    width: 25px;\n    margin-left: -4px /*removes space between buttons*/\n}\n.cesium-measure-button:first-child {\n    margin-left: 0;\n}\n.cesium-measure-button:hover {\n    background-color: #48b;\n}\n.cesium-measure-button:last-child {\n    border-right: none;\n}\n\n.cesium-measure-button.active {\n    background-color: #1a71cc;\n    cursor: default;\n}\n.cesium-measure-button-main {\n    stroke-width: 1.3;\n}\n.cesium-measure-help {\n    stroke-width: 0;\n    padding: 6px 8px;\n    fill: #edffff;\n}\n.cesium-measure-instructions {\n    position: absolute;\n    max-height: 500px;\n    width: 403px;\n    border: 1px solid #444;\n    overflow-y: auto;\n    border-radius: 0;\n    background-color: rgba(48,51,54,0.8);\n    color: #edffff;\n    padding: 10px;\n    stroke: #edffff;\n    stroke-width: 2;\n}\n.cesium-measure-icon {\n    margin-right: 10px;\n}\n.cesium-measure-instructions .bold {\n    margin-bottom: 3px;\n}\n.cesium-measure-instructions > ul {\n    padding-left: 20px;\n}\n";
+  ".cesium-measure-toolbar {\n    width: 40px;\n    height: 32px;\n    overflow: hidden;\n    transition: width 0.8s;\n    white-space: nowrap;\n    background: #303336;\n    border: 1px solid #444;\n    color: #edffff;\n    stroke: #edffff;\n    stroke-width: 2;\n    fill: transparent;\n}\n.cesium-measure-toolbar.expanded {\n    width: 423px;\n}\n.cesium-measure-button {\n        box-sizing: content-box;\n vertical-align: top;\n    display: inline-block;\n    border-right: 1px solid #444;\n    cursor: pointer;\n    padding: 4px 8px;\n    height: 25px;\n    width: 25px;\n    margin-left: -4px /*removes space between buttons*/\n}\n.cesium-measure-button:first-child {\n    margin-left: 0;\n}\n.cesium-measure-button:hover {\n    background-color: #48b;\n}\n.cesium-measure-button:last-child {\n    border-right: none;\n}\n\n.cesium-measure-button.active {\n    background-color: #1a71cc;\n    cursor: default;\n}\n.cesium-measure-button-main {\n    stroke-width: 1.3;\n}\n.cesium-measure-help {\n    stroke-width: 0;\n    padding: 6px 8px;\n    fill: #edffff;\n}\n.cesium-measure-instructions {\n    position: absolute;\n    max-height: 500px;\n    width: 403px;\n    border: 1px solid #444;\n    overflow-y: auto;\n    border-radius: 0;\n    background-color: rgba(48,51,54,0.8);\n    color: #edffff;\n    padding: 10px;\n    stroke: #edffff;\n    stroke-width: 2;\n}\n.cesium-measure-icon {\n    margin-right: 10px;\n}\n.cesium-measure-instructions .bold {\n    margin-bottom: 3px;\n}\n.cesium-measure-instructions > ul {\n    padding-left: 20px;\n}\n";
 styleInject(css);
 
 var css$1 =
@@ -4131,7 +4138,7 @@ Object.defineProperties(AreaMeasurement.prototype, {
    * @readonly
    */
   type: {
-    value: "Area"
+    value: "区域"
   },
   /**
    * Gets the instruction text.
@@ -4141,9 +4148,10 @@ Object.defineProperties(AreaMeasurement.prototype, {
    */
   instructions: {
     value: [
-      "Click to start drawing a polygon",
-      "Keep clicking to add more points",
-      "Double click to finish drawing"
+      "计算任意多边形的面积。请注意，多边形区域不考虑地形的轮廓。",
+      "单击以开始绘制多边形",
+      "继续点击以添加更多点",
+      "双击完成绘图"
     ]
   },
   /**
@@ -4483,9 +4491,9 @@ Object.defineProperties(DistanceMeasurement.prototype, {
   type: {
     get: function get() {
       if (this._showComponentLines) {
-        return "Component Distance";
+        return "分量距离(直角测量)";//Component Distance
       }
-      return "Distance";
+      return "距离";
     }
   },
   /**
@@ -4496,8 +4504,9 @@ Object.defineProperties(DistanceMeasurement.prototype, {
    */
   instructions: {
     value: [
-      "Click on the point cloud or the globe to set the start point and end points",
-      "To make a new measurement, click to clear the previous measurement"
+      "计算两点之间的线性距离。请注意，地球上的测量不考虑地形。",
+      "点击点云或地球仪设置起点和终点",//Click on the point cloud or the globe to set the start point and end points
+      "要进行新的测量，请单击以清除之前的测量"
     ]
   },
   /**
@@ -4509,9 +4518,9 @@ Object.defineProperties(DistanceMeasurement.prototype, {
   id: {
     get: function get() {
       if (this._showComponentLines) {
-        return "componentDistanceMeasurement";
+        return "分量测量";//componentDistanceMeasurement
       }
-      return "distanceMeasurement";
+      return "测距";
     }
   },
   /**
@@ -4975,7 +4984,7 @@ Object.defineProperties(HeightMeasurement.prototype, {
    * @readonly
    */
   type: {
-    value: "Height from terrain"
+    value: "地形高度"
   },
   /**
    * Gets the instruction text.
@@ -4985,7 +4994,8 @@ Object.defineProperties(HeightMeasurement.prototype, {
    */
   instructions: {
     value: [
-      "Click on the point cloud to get a distance from that point to terrain"
+      "计算空间中某点与该点下方地形之间的线性距离。如果在 2D 模式下激活，该值将始终为 0。",
+      "单击点云以获取从该点到地形的距离(高度)"
     ]
   },
   /**
@@ -4995,7 +5005,7 @@ Object.defineProperties(HeightMeasurement.prototype, {
    * @readonly
    */
   id: {
-    value: "heightMeasurement"
+    value: "高度测量"
   }
 });
 
@@ -5878,7 +5888,7 @@ Object.defineProperties(HorizontalMeasurement.prototype, {
    * @readonly
    */
   type: {
-    value: "Horizontal distance"
+    value: "水平距离"
   },
   /**
    * Gets the instruction text.
@@ -5888,11 +5898,12 @@ Object.defineProperties(HorizontalMeasurement.prototype, {
    */
   instructions: {
     value: [
-      "Click on the point cloud or the globe to set the start point",
-      "Move the mouse to drag the line",
-      "Press this shift key to clamp the direction of the line",
-      "Click again to set the end point",
-      "To make a new measurement, click to clear the previous measurement"
+      "计算相对于 WGS84 椭球处于相同高度的两点之间的线性距离。",
+      "单击点云或地球以设置起点",
+      "移动鼠标拖线",
+      "按下Shift键以固定线条的方向",
+      "再次点击设置终点",
+      "要进行新的测量，请单击以清除之前的测量"
     ]
   },
   /**
@@ -5902,7 +5913,7 @@ Object.defineProperties(HorizontalMeasurement.prototype, {
    * @readonly
    */
   id: {
-    value: "horizontalMeasurement"
+    value: "水平测量"
   }
 });
 
@@ -6486,7 +6497,7 @@ Object.defineProperties(PointMeasurement.prototype, {
    * @readonly
    */
   type: {
-    value: "Point coordinates"
+    value: "点坐标"
   },
   /**
    * Gets the instruction text.
@@ -6496,7 +6507,8 @@ Object.defineProperties(PointMeasurement.prototype, {
    */
   instructions: {
     value: [
-      "Move the mouse to see the longitude, latitude and height of the point"
+      "显示空间中指定点的经纬度坐标和高于地形的高度。",
+      "将鼠标移动以查看该点的经度、纬度和高度。"
     ]
   },
   /**
@@ -6506,7 +6518,7 @@ Object.defineProperties(PointMeasurement.prototype, {
    * @readonly
    */
   id: {
-    value: "pointMeasurement"
+    value: "点测量"
   }
 });
 
@@ -6566,14 +6578,14 @@ PointMeasurement.prototype.handleMouseMove = function (movePosition) {
   label.position = position;
   label.show = true;
   label.text =
-    "lon: " +
+    "经度: " +
     MeasureUnits.angleToString(
       positionCartographic.longitude,
       AngleUnits$1.DEGREES_MINUTES_SECONDS,
       this._selectedLocale
     ) +
     "\n" +
-    "lat: " +
+    "维度: " +
     MeasureUnits.angleToString(
       positionCartographic.latitude,
       AngleUnits$1.DEGREES_MINUTES_SECONDS,
@@ -6585,7 +6597,7 @@ PointMeasurement.prototype.handleMouseMove = function (movePosition) {
     this._pickPositionSupported()
   ) {
     label.text +=
-      "\nheight: " +
+      "\n高度: " +
       MeasureUnits.distanceToString(
         height,
         this._selectedUnits.distanceUnits,
@@ -6593,7 +6605,7 @@ PointMeasurement.prototype.handleMouseMove = function (movePosition) {
       );
     if (Cesium.defined(slope)) {
       label.text +=
-        "\nslope: " +
+        "\n坡度: " +
         MeasureUnits.angleToString(
           slope,
           this._selectedUnits.slopeUnits,
@@ -6970,7 +6982,7 @@ Object.defineProperties(PolylineMeasurement.prototype, {
    * @readonly
    */
   type: {
-    value: "Polyline Distance"
+    value: "折线距离"
   },
   /**
    * Gets the instruction text.
@@ -6980,9 +6992,9 @@ Object.defineProperties(PolylineMeasurement.prototype, {
    */
   instructions: {
     value: [
-      "Click to start drawing a polyline",
-      "Keep clicking to add more points",
-      "Double click to finish drawing"
+      "点击开始绘制折线",
+      "继续点击以添加更多的点",
+      "双击完成绘图"
     ]
   },
   /**
@@ -6992,7 +7004,7 @@ Object.defineProperties(PolylineMeasurement.prototype, {
    * @readonly
    */
   id: {
-    value: "polylineMeasurement"
+    value: "折线测量"
   }
 });
 
@@ -7208,7 +7220,7 @@ Object.defineProperties(VerticalMeasurement.prototype, {
    * @readonly
    */
   type: {
-    value: "Vertical distance"
+    value: "垂直距离"
   },
   /**
    * Gets the icon.
@@ -7236,10 +7248,11 @@ Object.defineProperties(VerticalMeasurement.prototype, {
    */
   instructions: {
     value: [
-      "Click on the point cloud or the globe to set the start point",
-      "Move the mouse to drag the line",
-      "Click again to set the end point",
-      "To make a new measurement, click to clear the previous measurement"
+      "计算经度/纬度相同但高度不同的两点之间的直线距离。如果在 2D 模式下激活，该值将始终为 0。",
+      "单击点云或地球以设置起点",
+      "移动鼠标以拖动线条",
+      "再次点击设置终点",
+      "要进行新的测量，请单击以清除之前的测量"
     ]
   },
   /**
@@ -7249,7 +7262,7 @@ Object.defineProperties(VerticalMeasurement.prototype, {
    * @readonly
    */
   id: {
-    value: "verticalMeasurement"
+    value: "垂直测量"
   }
 });
 
@@ -7602,7 +7615,7 @@ MeasureViewModel.prototype.destroy = function () {
 
 var html$1 =
   '<div class="cesium-measure-toolbar" data-bind="css: {expanded: expanded}">\n\
-                   <div class="cesium-measure-button cesium-measure-button-main" data-bind="click: toggleActive, attr: {title: expanded ? \'Collapse\' : \'Expand\'}">\n\
+                   <div class="cesium-measure-button cesium-measure-button-main" data-bind="click: toggleActive, attr: {title: expanded ? \'折叠\' : \'展开\'}">\n\
                        <svg width="25px" height="25px" viewBox="0 0 30 30">\
                           <path d="M 14.851122,11.545456 25.578177,0.95157924 29.306163,4.6249483 18.537701,15.246448 M 15.097088,18.640104 4.1531358,29.434698 0.62547531,25.653101 11.515909,14.853004"/>\
                           <path d="M 22.983411,26.662767 0.8350882,3.9632787 4.2110211,0.77972226 26.222602,23.217308 Z"/>\
@@ -7635,7 +7648,7 @@ var html$1 =
                </div>\n\
                <div class="cesium-measure-instructions" data-bind="visible: instructionsVisible">\n\
                    <!-- ko foreach: measurements -->\n\
-                   <div><div class="cesium-measure-icon" data-bind="html: icon" style="display: inline"></div><span data-bind="text: type"></span></div>\n\
+                   <div><div class="cesium-measure-icon" data-bind="html: icon" style="display: inline-block;"></div><span data-bind="text: type"></span></div>\n\
                    <ul data-bind="foreach: instructions">\n\
                        <li data-bind="text: $data"></li>\n\
                    </ul>\n\

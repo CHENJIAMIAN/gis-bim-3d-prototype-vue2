@@ -4,5 +4,8 @@
   "compilerOptions": {
     "composite": true,
     "types": ["node"]
+  },
+  "vueCompilerOptions": {
+    "target": 2.7
   }
 }

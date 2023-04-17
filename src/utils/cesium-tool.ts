@@ -12,7 +12,7 @@ import {
 import * as Cesium from "cesium";
 
 import CesiumNavigation from "cesium-navigation-es6";
-import { TransformEditor } from "./cesium-ion-plugins";
+import { TransformEditor,viewerMeasureMixin } from "./cesium-ion-plugins";
 /*---------------------------------------------------------------------------------------*/
 window.Cesium = Cesium;
 /*---------------------------------------------------------------------------------------*/
@@ -28,7 +28,8 @@ class CesiumTool {
     const { viewer } = this;
 
     this.createCesium("cesiumContainer");
-    // this.viewer.scene.primitives.add(Cesium.createOsmBuildings());
+    // this.viewer.scene.primitives.add(Cesium.createOsmBuildings());//OSM的全球粗模
+    this.viewer.extend(viewerMeasureMixin);//测量插件
     this.loadNavigatorPlugin();
     this.customBaseLayerPicker(); //添加高德底图
     // this.setCesiumCamera(); //重置HomeButton位置
@@ -320,7 +321,7 @@ class CesiumTool {
           navigationHelpButton: false, // 是否显示右上角的帮助按钮
           scene3DOnly: false, // 如果设置为 true，则所有几何图形以 3D 模式绘制以节约GPU资源
           shadows: false, // 是否显示阴影
-          shouldAnimate: false // 是否显示动画
+          shouldAnimate: false, // 是否显示动画
           // imageryProvider: new BingMapsImageryProvider({
           //     url: 'https://dev.virtualearth.net',
           //     key: 'YourBingMapKey',
