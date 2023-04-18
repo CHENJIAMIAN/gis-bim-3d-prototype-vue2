@@ -183,15 +183,8 @@ const storeCamera = () => {
       </table>
     </div>
     <pre class="text-black ml-80">
-            按效果排行
-            6.编写告警数据弹出面板
-            7.编写Cesium模型换色功能[满足可变色]
-            8.编写Cesium楼之间的管线潮流效果[满足有楼之间的潮流关系]
-                https://sandcastle.cesium.com/gallery/Underground%20Color.html
             9.编写Cesium删粗模功能[满足楼可换]
             10.编写Cesium移动精模楼体gltf（建模人员建）的功能
-            11.编写告警数据弹出面板关联数据功能[满足可关联告警数据]
-            12.模型管理
         </pre
     >
   </main>

@@ -7,12 +7,12 @@ import {
   Cartesian3,
   Cesium3DTileset,
   knockout,
-  Cartographic
+  Cartographic,
 } from "cesium";
 import * as Cesium from "cesium";
 
 import CesiumNavigation from "cesium-navigation-es6";
-import { TransformEditor,viewerMeasureMixin } from "./cesium-ion-plugins";
+import { TransformEditor, viewerMeasureMixin } from "./cesium-ion-plugins";
 /*---------------------------------------------------------------------------------------*/
 window.Cesium = Cesium;
 /*---------------------------------------------------------------------------------------*/
@@ -25,24 +25,162 @@ class CesiumTool {
   viewer: Viewer;
   constructor() {
     this.viewer = null;
+    this.createCesium("cesiumContainer");
     const { viewer } = this;
 
-    this.createCesium("cesiumContainer");
     // this.viewer.scene.primitives.add(Cesium.createOsmBuildings());//OSM的全球粗模
-    this.viewer.extend(viewerMeasureMixin);//测量插件
-    this.loadNavigatorPlugin();
-    this.customBaseLayerPicker(); //添加高德底图
+    // this.viewer.extend(viewerMeasureMixin); //测量插件
+    // viewer.extend(Cesium.viewerCesiumInspectorMixin); //地球调试插件
+    // viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);//3DTilesI调试插件
+    // this.loadNavigatorPlugin();
+    // this.customBaseLayerPicker(); //添加高德底图
     // this.setCesiumCamera(); //重置HomeButton位置
-    // this.createCityModelByGeojson();
+    this.createCityModelByGeojson();
     // this.loadGlbModel(113.94150864076296, 22.5154337740315, 0);
-    this.addMonitorPoint();
+    // this.addMonitorPoint();
     // this.load3DTileset().then((tileset) => {
+    //   // 楼变色/改3dtiles的颜色
+    //   tileset.style = new Cesium.Cesium3DTileStyle({
+    //     color: {
+    //       conditions: [
+    //         // ["${Height} >= 83", "color('purple', 0.5)"],
+    //         // ["${Height} >= 1", "color('cyan')"],
+    //         ["true", "color('blue')"],
+    //       ],
+    //     },
+    //   });
+    //   viewer.zoomTo(tileset);
+    //   // 监听Tileset的可见性变化
+    //   let flag = true;
+    //   tileset.tileVisible.addEventListener((root) => {
+    //     if (flag) {
+    //       this.printAllPropertiesOfTileSet(tileset);
+    //       flag = false;
+    //     }
+    //   });
+
     //   const center = tileset.boundingSphere.center;
     //   console.log("tileset center", center);
     //   this.createTransformEditor(tileset);
     //   console.log("createTransformEditor后的modelMatrix:");
     //   console.log(tileset.modelMatrix.toString());
     // });
+    // this.loadLineFlow();//管线潮流
+  }
+
+  async loadLineFlow() {
+    const { viewer } = this;
+
+    // Model positioning ===============================================
+    const position = Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706, 0);
+    const hpr = new Cesium.HeadingPitchRoll(0, 0, 0);
+    const fixedFrameTransform =
+      Cesium.Transforms.localFrameToFixedFrameGenerator("north", "west");
+    const url = "http://localhost:3000/ParcLeadMine.glb";
+    // const url = "http://localhost:3000/Instanced/InstancedGltfExternal/box.glb";
+    const textureUrl = Cesium.buildModuleUrl(
+      "http://localhost:3000/cesium_stripes.png"
+    );
+    // Custom Shader Definitions ========================================
+    const textureUniformShader = new Cesium.CustomShader({
+      uniforms: {
+        // 动画经过的时间（以秒为单位）
+        u_time: {
+          type: Cesium.UniformType.FLOAT,
+          value: 0,
+        },
+        // 用户定义的纹理
+        u_stripes: {
+          type: Cesium.UniformType.SAMPLER_2D,
+          value: new Cesium.TextureUniform({
+            url: textureUrl,
+          }),
+        },
+      },
+      // 将纹理应用于模型，但随着时间的推移稍微移动纹理坐标，使其具有动画效果。
+      fragmentShaderText: /* c */ `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material)
+    {
+        vec2 texCoord = fsInput.attributes.texCoord_0 + 0.1 * vec2(0.0, u_time);
+        material.diffuse = texture(u_stripes, texCoord).rgb;
+    }
+    `,
+    });
+    // Demos ==============================================================
+    viewer.scene.primitives.removeAll();
+    try {
+      const model = viewer.scene.primitives.add(
+        await Cesium.Model.fromGltfAsync({
+          url: url,
+          customShader: textureUniformShader,
+          modelMatrix: Cesium.Transforms.headingPitchRollToFixedFrame(
+            position,
+            hpr,
+            Cesium.Ellipsoid.WGS84,
+            fixedFrameTransform
+          ),
+        })
+      );
+
+      const removeListener = model.readyEvent.addEventListener(() => {
+        viewer.camera.flyToBoundingSphere(model.boundingSphere, {
+          duration: 0.5,
+        });
+
+        removeListener();
+      });
+    } catch (error) {
+      console.log(`Error loading model: ${error}`);
+    }
+    // Event handlers =====================================================
+    const startTime = performance.now();
+    viewer.scene.postUpdate.addEventListener(function () {
+      const elapsedTimeSeconds = (performance.now() - startTime) / 300;
+      textureUniformShader.setUniform("u_time", elapsedTimeSeconds);
+    });
+  }
+
+  createInfoBoxOfMonitorPoint(monitorPoints) {
+    const { viewer } = this;
+    // 创建 InfoBox
+    var infoBox = new Cesium.InfoBox("cesiumContainer");
+    infoBox.viewModel.showInfo = false;
+    infoBox.viewModel.closeClicked.addEventListener(function () {
+      infoBox.viewModel.showInfo = false;
+    });
+
+    // 在点击实体时弹出 InfoBox
+    viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(
+      movement
+    ) {
+      var pickedObject = viewer.scene.pick(movement.position);
+      if (
+        Cesium.defined(pickedObject) &&
+        monitorPoints.includes(pickedObject.id)
+      ) {
+        var position = pickedObject.id.position.getValue(
+          viewer.clock.currentTime
+        );
+
+        // 将笛卡尔坐标系转换为地理坐标系
+        const cartographic =
+          viewer.scene.globe.ellipsoid.cartesianToCartographic(position);
+        // 获取经度和纬度
+        const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+        const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+        const height = cartographic.height;
+
+        var description = /* html */ `
+          <h2>${pickedObject.id.name}</h2>
+          <p>${[longitude, latitude, height]}</p>
+          `;
+        infoBox.viewModel.showInfo = true;
+        infoBox.viewModel.description = description;
+      } else {
+        infoBox.viewModel.showInfo = false;
+      }
+    },
+    Cesium.ScreenSpaceEventType.LEFT_CLICK);
   }
 
   addMonitorPoint() {
@@ -54,21 +192,23 @@ class CesiumTool {
       position: Cesium.Cartesian3.fromDegrees(113.9470726, 22.5108667),
       billboard: {
         image: pinBuilder.fromColor(Cesium.Color.ROYALBLUE, 48).toDataURL(),
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-      }
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      },
     });
 
     const questionPin = viewer.entities.add({
       name: "Question mark",
       position: Cesium.Cartesian3.fromDegrees(113.94698529, 22.5120071),
       billboard: {
-        image: pinBuilder.fromText("测点1", Cesium.Color.BLACK, 100).toDataURL(),
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-      }
+        image: pinBuilder
+          .fromText("测点1", Cesium.Color.BLACK, 100)
+          .toDataURL(),
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      },
     });
 
     const url = Cesium.buildModuleUrl("Assets/Textures/maki/grocery.png");
-    const groceryPin = Promise.resolve(
+    const groceryPinPromise = Promise.resolve(
       pinBuilder.fromUrl(url, Cesium.Color.GREEN, 48)
     ).then(function (canvas) {
       return viewer.entities.add({
@@ -76,13 +216,13 @@ class CesiumTool {
         position: Cesium.Cartesian3.fromDegrees(113.94605217, 22.511786),
         billboard: {
           image: canvas.toDataURL(),
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-        }
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        },
       });
     });
 
     //从 maki 图标集创建一个代表医院的红色图钉。
-    const hospitalPin = Promise.resolve(
+    const hospitalPinPromise = Promise.resolve(
       pinBuilder.fromMakiIconId("hospital", Cesium.Color.RED, 48)
     ).then(function (canvas) {
       return viewer.entities.add({
@@ -90,15 +230,24 @@ class CesiumTool {
         position: Cesium.Cartesian3.fromDegrees(113.94698606, 22.5111275),
         billboard: {
           image: canvas.toDataURL(),
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-        }
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        },
       });
     });
 
     //由于一些引脚是异步创建的，因此在缩放之前等待它们全部加载/
-    Promise.all([bluePin, questionPin, groceryPin, hospitalPin]).then(function (
-      pins
-    ) {
+    Promise.all([
+      bluePin,
+      questionPin,
+      groceryPinPromise,
+      hospitalPinPromise,
+    ]).then(async (pins) => {
+      this.createInfoBoxOfMonitorPoint([
+        bluePin,
+        questionPin,
+        await groceryPinPromise,
+        await hospitalPinPromise,
+      ]);
       viewer.zoomTo(pins);
     });
   }
@@ -109,8 +258,8 @@ class CesiumTool {
       name: "Wood Tower",
       height: 0.0,
       model: {
-        uri: "http://localhost:3000/Wood_Tower.glb"
-      }
+        uri: "http://localhost:3000/Wood_Tower.glb",
+      },
     };
     const entity = (window.glbEntity = viewer.entities.add(woodTower));
     entity.position = Cesium.Cartesian3.fromDegrees(
@@ -136,7 +285,7 @@ class CesiumTool {
       frustum: viewer.camera.frustum.clone(),
       defaultMoveAmount: viewer.camera.defaultMoveAmount,
       maximumMovementRatio: viewer.camera.maximumMovementRatio,
-      transform: viewer.camera.transform.clone()
+      transform: viewer.camera.transform.clone(),
     };
     console.log(
       "storeCamera",
@@ -153,28 +302,76 @@ class CesiumTool {
       destination: savedCameraState.position,
       orientation: {
         direction: savedCameraState.direction,
-        up: savedCameraState.up
+        up: savedCameraState.up,
       },
       frustum: savedCameraState.frustum,
       defaultMoveAmount: savedCameraState.defaultMoveAmount,
       maximumMovementRatio: savedCameraState.maximumMovementRatio,
-      transform: savedCameraState.transform
+      transform: savedCameraState.transform,
     });
   }
 
+  convertGeoJsonDataSourceToGeoJson(dataSource) {
+    var geojson = dataSource.entities.values.map(function (entity) {
+      var properties = entity.properties.getValue(0);
+
+      var feature = {
+        type: "Feature",
+        properties: {},
+        geometry: {},
+      };
+
+      for (var key in properties) {
+        if (properties.hasOwnProperty(key)) {
+          feature.properties[key] = properties[key];
+        }
+      }
+
+      feature.geometry.coordinates = [];
+
+      if (entity.polygon) {
+        var positions = entity.polygon.hierarchy.getValue().positions;
+        for (var i = 0; i < positions.length; i++) {
+          var position = positions[i];
+
+          // 将笛卡尔坐标系转换为地理坐标系
+          const cartographic =
+            viewer.scene.globe.ellipsoid.cartesianToCartographic(position);
+          // 获取经度和纬度
+          const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+          const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+
+          feature.geometry.coordinates.push([longitude, latitude]);
+        }
+      }
+
+      return feature;
+    });
+    const geoJSON = {
+      type: "FeatureCollection",
+      features: geojson,
+    };
+    console.log(geoJSON);
+    return geoJSON;
+  }
   // 并根据给的property里带height的geojson文件,生成城市粗模
   createCityModelByGeojson() {
     const { viewer } = this;
 
     var dataSource = new Cesium.GeoJsonDataSource();
-    var promise = dataSource.load(
-      "http://localhost:3000/从优锘爬的南山建筑_sub.geojson"
-    );
-    promise.then((dataSource) => {
+    const geojsonURL = "http://localhost:3000/从优锘爬的南山建筑_sub.geojson";
+    var promise = dataSource.load(geojsonURL);
+    promise.then(async (dataSource) => {
       viewer.dataSources.add(dataSource);
       window.dataSource = dataSource;
       var entities = dataSource.entities.values;
-
+      /*---------------------------------------------------------------------------------------*/
+      const response = await fetch(geojsonURL);
+      const data = await response.json();
+      // the content of the GeoJSON file is in the data variable
+      console.log(data);
+      this.convertGeoJsonDataSourceToGeoJson(dataSource);
+      /*---------------------------------------------------------------------------------------*/
       // const colorHash = {};
       for (let i = 0; i < entities.length; i++) {
         //   //对于每个实体，根据状态名称创建随机颜色。
@@ -198,10 +395,14 @@ class CesiumTool {
         entity.polygon.extrudedHeight = entity.properties.height;
 
         if (i === entities.length - 1) {
-          const state = JSON.parse(
-            '{"position":{"x":467.6261964221485,"y":-1654.7784893745556,"z":614.7921144040301},"direction":{"x":-0.2560678858278986,"y":0.9061417704669454,"z":-0.3366546147948367},"up":{"x":-0.09155039645111372,"y":0.3239673665237031,"z":0.9416282017533993},"frustum":{"_offCenterFrustum":{"left":-0.057735026918962574,"right":0.057735026918962574,"top":0.028867513459481287,"bottom":-0.028867513459481287,"near":0.1,"far":10000000000,"_cullingVolume":{"planes":[]},"_perspectiveMatrix":{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0},"_infinitePerspective":{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0}},"fov":1.0471975511965976,"aspectRatio":2,"near":0.1,"far":10000000000,"xOffset":0,"_xOffset":0,"yOffset":0,"_yOffset":0},"defaultMoveAmount":100000,"transform":{"0":-0.9139602054725658,"1":-0.40580382306299795,"2":0,"3":0,"4":0.15539538819007595,"5":-0.34998487655362137,"6":0.9237764120787031,"7":0,"8":-0.37487199967695717,"9":0.8442948793941614,"10":0.38293229230112996,"11":0,"12":-2392168.4065228975,"13":5387693.767515922,"14":2427245.092321965,"15":1}}'
-          );
-          this.restoreCamera(state);
+          // 相机看南山
+          viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(
+              113.94698606,
+              22.5111275,
+              1000
+            ),
+          });
         }
       }
     });
@@ -248,7 +449,7 @@ class CesiumTool {
       tileset: tileset,
       scene: viewer.scene,
       transform: tileset.modelMatrix,
-      boundingSphere: tileset.boundingSphere
+      boundingSphere: tileset.boundingSphere,
     });
     transformEditor.viewModel.activate();
   }
@@ -256,11 +457,25 @@ class CesiumTool {
   async load3DTileset() {
     const { viewer } = this;
     const tileset = (window.tileset = new Cesium3DTileset({
-      url: tileUrl
+      url: tileUrl,
     }));
-    await tileset.readyPromise;
-    viewer.zoomTo(tileset);
-    return viewer.scene.primitives.add(tileset);
+    viewer.scene.primitives.add(tileset);
+
+    return tileset.readyPromise;
+  }
+  // 打印所有属性
+  printAllPropertiesOfTileSet(tileset) {
+    const batchTable = tileset.root.content.batchTable;
+    let i = 0;
+    while (i < batchTable.featuresLength) {
+      const fea = batchTable.getFeature(i);
+      const propIds = fea.getPropertyIds();
+      propIds.forEach((key) => {
+        const value = fea.getProperty(key);
+        console.log(key, value);
+      });
+      i++;
+    }
   }
 
   loadNavigatorPlugin() {
@@ -277,7 +492,7 @@ class CesiumTool {
     options.orientation = {
       heading: Cesium.Math.toRadians(350.94452087411315),
       pitch: Cesium.Math.toRadians(-66.6402342251215),
-      roll: Cesium.Math.toRadians(360)
+      roll: Cesium.Math.toRadians(360),
     };
     //相机延时
     options.duration = 4; //默认为3s
@@ -334,8 +549,6 @@ class CesiumTool {
           // }),
         }));
     viewer.cesiumWidget.creditContainer.style.display = "none"; //隐藏版权信息
-    // 允许穿到地面下
-    viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
     // viewer.extend(Cesium.viewerCesiumInspectorMixin);//使用Inspector面板
     // viewer.scene.debugShowFramesPerSecond = true; // 显示帧率
     // viewer.scene.globe.depthTestAgainstTerrain = true; // 控制视角不转到地下（确保在地形后面的物体被正确地遮挡，只有最前端的对象可见）
@@ -384,7 +597,7 @@ class CesiumTool {
       credit: new Cesium.Credit("高德地图服务"),
       subdomains: ["webst01", "webst02", "webst03", "webst04"],
       tilingScheme: new Cesium.WebMercatorTilingScheme(),
-      maximumLevel
+      maximumLevel,
     });
     // 创建高德地图的ImageryViewModel对象
     const gaodeViewModel = new Cesium.ProviderViewModel({
@@ -394,7 +607,7 @@ class CesiumTool {
       tooltip: "高德地图",
       creationFunction: function () {
         return gaodeProvider;
-      }
+      },
     });
     // 将高德地图的ImageryViewModel对象添加到imageryProviderViewModels数组中
     baseLayerPicker.viewModel.imageryProviderViewModels.push(gaodeViewModel);
@@ -421,8 +634,8 @@ class CesiumTool {
         heading: initialOrientation.heading,
         ///不知道设多少可以从控制台的camera.heading获取！！/
         pitch: initialOrientation.pitch,
-        roll: initialOrientation.roll
-      }
+        roll: initialOrientation.roll,
+      },
     };
     //HeadingPitchRange
     viewer.scene.camera.setView(homeCameraView); // 设置初始视野视角
@@ -442,7 +655,7 @@ class CesiumTool {
       rx: 0, //X轴（经度）方向旋转角度（单位：度）
       ry: 0, //Y轴（纬度）方向旋转角度（单位：度）
       rz: 0, //Z轴（高程）方向旋转角度（单位：度）
-      scale: 1 //缩放比例
+      scale: 1, //缩放比例
     }
   ) {
     // this.update3dtilesMaxtrix(tileset, {
@@ -493,8 +706,8 @@ class CesiumTool {
       matrix: {
         origin: tileset._root.transform.clone(),
         rotation: Cesium.Matrix4.IDENTITY,
-        translation: Cesium.Matrix4.IDENTITY
-      }
+        translation: Cesium.Matrix4.IDENTITY,
+      },
     };
     let m_scale = Cesium.Matrix4.fromScale(
       new Cesium.Cartesian3(scale, scale, scale)
@@ -526,7 +739,7 @@ class CesiumTool {
     const viewModel = {
       height: 0,
       latitude: 0,
-      longitude: 0
+      longitude: 0,
     };
     knockout.track(viewModel);
 

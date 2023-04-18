@@ -103,7 +103,6 @@ const onSubmit = () => {
           ></el-checkbox>
         </el-form-item>
         <el-form-item label="添加模型" size="mini">
-          <el-button type="primary" @click="">选择模型</el-button>
           <el-select
             v-model="form1.vvv5"
             class="ml-2"

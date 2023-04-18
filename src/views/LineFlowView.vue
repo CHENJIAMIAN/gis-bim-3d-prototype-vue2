@@ -76,12 +76,12 @@
           :width="col.width"
         ></el-table-column>
         <el-table-column label="操作">
-          <template slot-scope="scope">
+          <div class="flex gap-2 flex-wrap" slot-scope="scope">
             <el-button size="mini" @click="handleLink(scope.row)">
               管线关联
             </el-button>
-            <el-button size="mini" @click="">潮流配置</el-button>
-          </template>
+            <el-button class="!ml-0" size="mini" @click="">潮流配置</el-button>
+          </div>
         </el-table-column>
       </el-table>
     </el-card>
