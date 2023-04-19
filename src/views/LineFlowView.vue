@@ -1,9 +1,96 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { reactive, ref } from "vue";
+
+const dialogVisible1 = ref(false);
+const form1 = reactive({
+  vvv1: 0,
+});
+const rules1 = reactive({});
+
+const beforeUpload = (file) => {
+  const isGlb = file.type === "model/gltf-binary";
+  const hasGltfFolder =
+    file.name.indexOf(".gltf") !== -1 && file.name.lastIndexOf("/") !== -1;
+
+  if (!isGlb && !hasGltfFolder) {
+    this.$message.error("只能上传glb或带有gltf文件夹的文件");
+    return false;
+  }
+  return true;
+};
+</script>
 <template>
   <div class="p-5">
+    <!--  -->
+    <el-dialog
+      title="潮流配置"
+      :visible.sync="dialogVisible1"
+      width="60%"
+      @close=""
+    >
+      <el-form
+        :model="form1"
+        ref="form1"
+        :rules="rules1"
+        label-width="80px"
+        :inline="false"
+        size="mini"
+      >
+        <el-form-item label="效果">
+          <el-select
+            v-model="form1.vvv1"
+            value-key="value"
+            placeholder="请选择效果"
+            clearable
+            filterable
+            @change=""
+          >
+            <el-option
+              v-for="item in [{label: '效果1', value: '1'}, {label: '效果2', value: '2'}]"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="颜色">
+          <el-color-picker
+            v-model="form1.vvv2"
+            :show-alpha="true"
+          ></el-color-picker>
+        </el-form-item>
+        <el-form-item label="大小">
+          <el-input v-model="form1.vvv3"></el-input>
+        </el-form-item>
+        <el-form-item label="方向">
+          <el-input v-model="form1.vvv4"></el-input>
+        </el-form-item>
+        <el-form-item label="速度">
+          <el-input v-model="form1.vvv5"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="onSubmit">保存</el-button>
+          <el-button @click="dialogVisible1 = false">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+
+    <!--  -->
     <el-card shadow="always" :body-style="{ padding: '20px' }">
       <div slot="header">
         <span>管线潮流</span>
+        <el-upload
+          class="mt-2 !ml-0"
+          :action="baseUrl + '/api/upload/gltf'"
+          :headers="headers"
+          :before-upload="beforeUpload"
+          multiple
+        >
+          <el-button size="small" type="primary" slot="trigger"
+            >上传管线模型</el-button
+          >
+        </el-upload>
       </div>
 
       <!-- card body -->
@@ -33,30 +120,6 @@
             direction: '方向3',
             speed: '速度3',
           },
-          {
-            name: '管线4',
-            effect: '效果2',
-            color: '颜色4',
-            size: '大小4',
-            direction: '方向4',
-            speed: '速度4',
-          },
-          {
-            name: '管线5',
-            effect: '效果2',
-            color: '颜色5',
-            size: '大小5',
-            direction: '方向5',
-            speed: '速度5',
-          },
-          {
-            name: '管线6',
-            effect: '效果3',
-            color: '颜色6',
-            size: '大小6',
-            direction: '方向6',
-            speed: '速度6',
-          },
         ]"
         border
         stripe
@@ -80,7 +143,9 @@
             <el-button size="mini" @click="handleLink(scope.row)">
               管线关联
             </el-button>
-            <el-button class="!ml-0" size="mini" @click="">潮流配置</el-button>
+            <el-button class="!ml-0" size="mini" @click="dialogVisible1 = true"
+              >潮流配置</el-button
+            >
           </div>
         </el-table-column>
       </el-table>

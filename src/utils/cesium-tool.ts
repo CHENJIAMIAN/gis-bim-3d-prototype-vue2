@@ -23,49 +23,58 @@ const tileUrl =
 /*---------------------------------------------------------------------------------------*/
 class CesiumTool {
   viewer: Viewer;
-  constructor() {
+
+  /**
+   *
+   * @param options
+   */
+  constructor(options) {
     this.viewer = null;
-    this.createCesium("cesiumContainer");
-    const { viewer } = this;
 
-    // this.viewer.scene.primitives.add(Cesium.createOsmBuildings());//OSM的全球粗模
-    // this.viewer.extend(viewerMeasureMixin); //测量插件
-    // viewer.extend(Cesium.viewerCesiumInspectorMixin); //地球调试插件
-    // viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);//3DTilesI调试插件
-    // this.loadNavigatorPlugin();
-    // this.customBaseLayerPicker(); //添加高德底图
-    // this.setCesiumCamera(); //重置HomeButton位置
-    this.createCityModelByGeojson();
-    // this.loadGlbModel(113.94150864076296, 22.5154337740315, 0);
-    // this.addMonitorPoint();
-    // this.load3DTileset().then((tileset) => {
-    //   // 楼变色/改3dtiles的颜色
-    //   tileset.style = new Cesium.Cesium3DTileStyle({
-    //     color: {
-    //       conditions: [
-    //         // ["${Height} >= 83", "color('purple', 0.5)"],
-    //         // ["${Height} >= 1", "color('cyan')"],
-    //         ["true", "color('blue')"],
-    //       ],
-    //     },
-    //   });
-    //   viewer.zoomTo(tileset);
-    //   // 监听Tileset的可见性变化
-    //   let flag = true;
-    //   tileset.tileVisible.addEventListener((root) => {
-    //     if (flag) {
-    //       this.printAllPropertiesOfTileSet(tileset);
-    //       flag = false;
-    //     }
-    //   });
+    if (options.action) {
+    } else {
+      this.createCesium("cesiumContainer");
+      const { viewer } = this;
 
-    //   const center = tileset.boundingSphere.center;
-    //   console.log("tileset center", center);
-    //   this.createTransformEditor(tileset);
-    //   console.log("createTransformEditor后的modelMatrix:");
-    //   console.log(tileset.modelMatrix.toString());
-    // });
-    // this.loadLineFlow();//管线潮流
+      // this.viewer.scene.primitives.add(Cesium.createOsmBuildings());//OSM的全球粗模
+      // this.viewer.extend(viewerMeasureMixin); //测量插件
+      // viewer.extend(Cesium.viewerCesiumInspectorMixin); //地球调试插件
+      // viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);//3DTilesI调试插件
+      // this.loadNavigatorPlugin();
+      // this.customBaseLayerPicker(); //添加高德底图
+      // this.setCesiumCamera(); //重置HomeButton位置
+      // this.createCityModelByGeojson();
+      this.loadGlbModel(113.94150864076296, 22.5154337740315, 0);
+      // this.addMonitorPoint();
+      // this.load3DTileset().then((tileset) => {
+      //   // 楼变色/改3dtiles的颜色
+      //   tileset.style = new Cesium.Cesium3DTileStyle({
+      //     color: {
+      //       conditions: [
+      //         // ["${Height} >= 83", "color('purple', 0.5)"],
+      //         // ["${Height} >= 1", "color('cyan')"],
+      //         ["true", "color('blue')"],
+      //       ],
+      //     },
+      //   });
+      //   viewer.zoomTo(tileset);
+      //   // 监听Tileset的可见性变化
+      //   let flag = true;
+      //   tileset.tileVisible.addEventListener((root) => {
+      //     if (flag) {
+      //       this.printAllPropertiesOfTileSet(tileset);
+      //       flag = false;
+      //     }
+      //   });
+
+      //   const center = tileset.boundingSphere.center;
+      //   console.log("tileset center", center);
+      //   this.createTransformEditor(tileset);
+      //   console.log("createTransformEditor后的modelMatrix:");
+      //   console.log(tileset.modelMatrix.toString());
+      // });
+      // this.loadLineFlow();//管线潮流
+    }
   }
 
   async loadLineFlow() {
@@ -252,21 +261,60 @@ class CesiumTool {
     });
   }
 
-  loadGlbModel(longitude, latitude, height) {
+  async loadGlbModel(longitude, latitude, height) {
     const { viewer } = this;
-    const woodTower = {
-      name: "Wood Tower",
-      height: 0.0,
-      model: {
-        uri: "http://localhost:3000/Wood_Tower.glb",
-      },
-    };
-    const entity = (window.glbEntity = viewer.entities.add(woodTower));
-    entity.position = Cesium.Cartesian3.fromDegrees(
-      longitude,
-      latitude,
-      height + entity.height
-    );
+
+    /*这种加载方式无法使用模型编辑器---------------------------------------------------------------------------------------*/
+    // const woodTower = {
+    //   name: "Wood Tower",
+    //   height: 0.0,
+    //   model: {
+    //     uri: "http://localhost:3000/Wood_Tower.glb",
+    //   },
+    // };
+    // const entity = (window.glbEntity = viewer.entities.add(woodTower));
+    // entity.position = Cesium.Cartesian3.fromDegrees(
+    //   longitude,
+    //   latitude,
+    //   height + entity.height
+    // );
+    /*---------------------------------------------------------------------------------------*/
+    // 创建一个heading、pitch、roll坐标系
+    const hpr = new Cesium.HeadingPitchRoll(0, 0, 0);
+    // 生成一个从参考帧计算 4x4 变换矩阵的函数 转换原始点坐标 到 椭球体的固定参考系。
+    const fixedFrameTransform =
+      Cesium.Transforms.localFrameToFixedFrameGenerator("north", "west");
+    try {
+      // 异步加载模型文件，并添加至场景中
+      const model = (window.model = viewer.scene.primitives.add(
+        await Cesium.Model.fromGltfAsync({
+          // 加载模型文件的url
+          url: "http://localhost:3000/Wood_Tower.glb",
+          // 指定模型文件的位置姿态
+          modelMatrix: Cesium.Transforms.headingPitchRollToFixedFrame(
+            // @paramorigin — 局部参考系的中心点。
+            Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
+            // @paramheadingPitchRoll — 模型的航向、俯仰和滚动。
+            hpr,
+            // @paramellipsoid — 其固定框架用于转换的椭圆体。
+            Cesium.Ellipsoid.WGS84,
+            // @paramfixedFrameTransform 4x4 变换 从参考系到提供的WGS84椭球体的固定参考系的矩阵
+            fixedFrameTransform
+          ),
+        })
+      ));
+
+      const removeListener = model.readyEvent.addEventListener(() => {
+        this.createTransformEditor(model);
+        viewer.camera.flyToBoundingSphere(model.boundingSphere, {
+          duration: 0.5,
+        });
+
+        removeListener();
+      });
+    } catch (error) {
+      console.log(`Error loading model: ${error}`);
+    }
   }
 
   _savedCameraState: CameraState = {};
@@ -312,46 +360,56 @@ class CesiumTool {
   }
 
   convertGeoJsonDataSourceToGeoJson(dataSource) {
-    var geojson = dataSource.entities.values.map(function (entity) {
-      var properties = entity.properties.getValue(0);
+    // 按id以高度分类
+    const heightMapEntites = {};
+    dataSource.entities.values.forEach((et) => {
+      const { height } = et.properties.getValue(0);
+      if (!heightMapEntites[height]) heightMapEntites[height] = [];
+      heightMapEntites[height].push(et);
+    });
+    const featuresGeoJSON = [];
+    for (let height in heightMapEntites) {
+      const entities = heightMapEntites[height];
 
-      var feature = {
+      var Feature = {
         type: "Feature",
-        properties: {},
-        geometry: {},
+        properties: { height: Number(height) },
+        geometry: {
+          type: "MultiPolygon",
+          coordinates: [
+            //建筑1的面
+            //建筑2的面
+          ],
+        },
       };
 
-      for (var key in properties) {
-        if (properties.hasOwnProperty(key)) {
-          feature.properties[key] = properties[key];
+      entities.forEach((entity) => {
+        if (entity.polygon) {
+          var positions = entity.polygon.hierarchy.getValue().positions;
+          const ring1CoordinatesOfEntity = [];
+          for (var i = 0; i < positions.length; i++) {
+            var position = positions[i];
+
+            // 将笛卡尔坐标系转换为地理坐标系
+            const cartographic =
+              viewer.scene.globe.ellipsoid.cartesianToCartographic(position);
+            // 获取经度和纬度
+            const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            ring1CoordinatesOfEntity.push([longitude, latitude]);
+          }
+          Feature.geometry.coordinates.push([ring1CoordinatesOfEntity]);
         }
-      }
+      });
 
-      feature.geometry.coordinates = [];
+      featuresGeoJSON.push(Feature);
+    }
 
-      if (entity.polygon) {
-        var positions = entity.polygon.hierarchy.getValue().positions;
-        for (var i = 0; i < positions.length; i++) {
-          var position = positions[i];
-
-          // 将笛卡尔坐标系转换为地理坐标系
-          const cartographic =
-            viewer.scene.globe.ellipsoid.cartesianToCartographic(position);
-          // 获取经度和纬度
-          const longitude = Cesium.Math.toDegrees(cartographic.longitude);
-          const latitude = Cesium.Math.toDegrees(cartographic.latitude);
-
-          feature.geometry.coordinates.push([longitude, latitude]);
-        }
-      }
-
-      return feature;
-    });
     const geoJSON = {
       type: "FeatureCollection",
-      features: geojson,
+      features: featuresGeoJSON,
     };
-    console.log(geoJSON);
+    console.log("TOFIX:输出的新geoJSON有错误（没有挖洞）", geoJSON);
     return geoJSON;
   }
   // 并根据给的property里带height的geojson文件,生成城市粗模

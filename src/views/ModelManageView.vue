@@ -93,6 +93,7 @@
           <div class="flex gap-2 flex-wrap" slot-scope="scope">
             <el-button
               type="primary"
+              class="!ml-0"
               icon="el-icon-edit"
               size="mini"
               @click="showEditDialog(scope.row)"
@@ -101,17 +102,22 @@
             </el-button>
             <el-button
               type="danger"
+              class="!ml-0"
               icon="el-icon-delete"
               size="mini"
               @click="deleteRow(scope.row)"
             >
               删除
             </el-button>
-            <el-button size="mini" @click="handleLink(scope.row)">
+            <el-button class="!ml-0" size="mini" @click="handleLink(scope.row)">
               关联告警
             </el-button>
-            <el-button size="mini" @click="">位置姿态调整</el-button>
-            <el-button size="mini" @click="">关联告警/信息面板</el-button>
+            <el-button class="!ml-0" size="mini" @click=""
+              >位置姿态调整</el-button
+            >
+            <el-button class="!ml-0" size="mini" @click=""
+              >关联告警/信息面板</el-button
+            >
           </div>
         </el-table-column>
       </el-table>

@@ -9,11 +9,11 @@ defineProps<{
 <template>
   <div id="app">
     <header class="p-5 flex gap-5 bg-gray-200 text-gray-600 font-bold">
-      <router-link to="/">地图显示</router-link>
-      <router-link to="/mc">地图配置</router-link>
-      <router-link to="/am">告警管理</router-link>
-      <router-link to="/mm">模型管理</router-link>
-      <router-link to="/lf">管线潮流</router-link>
+      <router-link to="/">🎈地图显示</router-link>
+      <router-link to="/mc">🎇地图配置</router-link>
+      <router-link to="/am">🧨告警管理</router-link>
+      <router-link to="/mm">🎉模型管理</router-link>
+      <router-link to="/lf">🎃管线潮流</router-link>
     </header>
 
     <div class="app-content">

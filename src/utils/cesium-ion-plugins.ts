@@ -1234,7 +1234,7 @@ function RotationEditor(options) {
 
   this.originOffset = options.originOffset;
   this._tileset = tileset;
-  this._isDefinedRegion = Array.isArray(tileset.root._header.boundingVolume.region);
+  this._isDefinedRegion = tileset instanceof Cesium.Cesium3DTileset ? Array.isArray(tileset.root._header.boundingVolume.region): false;
   this._scene = scene;
   this._setHPRCallback = options.setHeadingPitchRoll;
   this._setPositionCallback = options.setPosition;
@@ -1554,7 +1554,7 @@ function ScaleEditor(options) {
   this._polylineZ = scene.primitives.add(getLinePrimitive$1(TransformAxis$1.Z));
 
   this._tileset = tileset;
-  this._isDefinedRegion = Array.isArray(tileset.root._header.boundingVolume.region);
+  this._isDefinedRegion = tileset instanceof Cesium.Cesium3DTileset ? Array.isArray(tileset.root._header.boundingVolume.region): false;
   this._scene = scene;
   this._canvas = scene.canvas;
   this._enableNonUniformScaling = options.enableNonUniformScaling;
@@ -1861,7 +1861,7 @@ function TranslationEditor(options) {
   this._polylineZ = scene.primitives.add(getLinePrimitive$2(TransformAxis$1.Z));
 
   this._tileset = tileset;
-  this._isDefinedRegion = Array.isArray(tileset.root._header.boundingVolume.region);
+  this._isDefinedRegion = tileset instanceof Cesium.Cesium3DTileset ? Array.isArray(tileset.root._header.boundingVolume.region): false;
   this._scene = scene;
   this._canvas = scene.canvas;
   this._setPositionCallback = options.setPosition;
@@ -2277,7 +2277,7 @@ function TransformEditorViewModel(options) {
 
   // boundingVolume 有几种类型,除了region带初始位置, 其他的如果tileset.json没有transform属性则默认在球心,否则被transform变换到正确位置
   this.tileset = tileset;
-  this.isDefinedRegion = Array.isArray(tileset.root._header.boundingVolume.region);
+  this._isDefinedRegion = tileset instanceof Cesium.Cesium3DTileset ? Array.isArray(tileset.root._header.boundingVolume.region): false;
 
   var originOffset = Cesium.defaultValue(
     options.originOffset,

@@ -1,9 +1,12 @@
 <script setup lang="tsx">
-import { onMounted, default as Vue, ref } from "vue";
+import { onMounted, default as Vue, ref, getCurrentInstance } from "vue";
 import CesiumTool from "@/utils/cesium-tool";
+
+const { proxy: vm } = getCurrentInstance();
 
 let cesiumTool = null;
 const aaa = ref(123);
+
 let search = "";
 
 onMounted(() => {
@@ -125,12 +128,25 @@ const onCreateTransformEditor = () => {
 const storeCamera = () => {
   cesiumTool.storeCamera();
 };
+const handleAction = () => {
+  const action = vm.$route.query.action;
+
+  if (action === "get-view-parameters") {
+    // 获取视图参数
+    vm.$message("获取视图参数");
+  } else if (action === "get-viewport-parameters") {
+    vm.$message("获取视角参数");
+  } else {
+    // 不支持的操作
+  }
+};
+handleAction();
 </script>
 
 <template>
   <main class="relative">
     <div id="cesiumContainer"></div>
-    <div id="toolbar">
+    <div id="toolbar" v-if="false">
       <el-button theme="primary" @click="storeCamera">storeCamera</el-button>
       <el-button theme="primary" @click="onClickFlyTo">fly to</el-button>
       <el-button theme="primary" @click="onCreateTransformEditor">
@@ -182,11 +198,6 @@ const storeCamera = () => {
         </tbody>
       </table>
     </div>
-    <pre class="text-black ml-80">
-            9.编写Cesium删粗模功能[满足楼可换]
-            10.编写Cesium移动精模楼体gltf（建模人员建）的功能
-        </pre
-    >
   </main>
 </template>
 

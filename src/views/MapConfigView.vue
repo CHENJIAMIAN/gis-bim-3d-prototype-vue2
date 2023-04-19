@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { reactive } from "vue";
+import { reactive, ref, getCurrentInstance } from "vue";
 
+const { proxy: vm } = getCurrentInstance();
+console.log("vm.$route.query", vm.$route.query);
+
+const showMapConfigDialog = ref(false);
 const form1 = reactive({
   vvv1: "高德卫星底图",
   vvv2: "1",
@@ -8,6 +12,7 @@ const form1 = reactive({
   vvv4: true,
   vvv5: [],
 });
+const rules1 = reactive({});
 
 const onSubmit = () => {
   console.log(form1.value);
@@ -15,6 +20,12 @@ const onSubmit = () => {
 </script>
 <template>
   <div class="p-5">
+    <!-- :aaa="
+      (() => {
+        debugger;
+        console.log(this);
+      })()
+    " -->
     <el-card shadow="always" :body-style="{ padding: '20px' }">
       <!-- <div slot="header">
        </div> -->
@@ -30,12 +41,19 @@ const onSubmit = () => {
           <el-radio-group v-model="form1.vvv1">
             <el-radio
               v-for="item in [
-                { label: '高德卫星底图' },
-                { label: '高德普通底图' },
+                { label: '高德普通底图', bgY: '0' },
+                { label: '高德卫星底图', bgY: '-181' },
               ]"
-              :key="item.key"
+              :key="item.label"
               :label="item.label"
-            ></el-radio>
+            >
+              {{ item.label }}
+              <div
+                class="mt-2 ml-7 bg-[url(//webmap1.bdimg.com/wolfman/static/common/images/new/maptype\_a6d3e9b.png)] h-[60px] w-[86px] bg-[86px_240px]"
+                :style="`background-position: 0 ${item.bgY}px;`"
+                src="https://webmap1.bdimg.com/wolfman/static/common/images/new/maptype_a6d3e9b.png"
+              ></div>
+            </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="初始视图配置" size="small">
@@ -58,7 +76,16 @@ const onSubmit = () => {
               :value="item.value"
             ></el-option>
           </el-select>
-          <el-button type="primary" size="small" @click="">
+          <el-button
+            type="primary"
+            size="small"
+            @click="
+              $router.push({
+                path: '/',
+                query: { action: 'get-view-parameters' },
+              })
+            "
+          >
             获取视图参数
           </el-button>
         </el-form-item>
@@ -82,7 +109,16 @@ const onSubmit = () => {
               :value="item.value"
             ></el-option>
           </el-select>
-          <el-button type="primary" size="small" @click="">
+          <el-button
+            type="primary"
+            size="small"
+            @click="
+              $router.push({
+                path: '/',
+                query: { action: 'get-viewport-parameters' },
+              })
+            "
+          >
             获取视角参数
           </el-button>
         </el-form-item>
