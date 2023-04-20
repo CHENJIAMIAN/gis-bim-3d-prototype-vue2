@@ -1,25 +1,90 @@
 <script setup lang="ts">
-import { reactive, ref, getCurrentInstance } from "vue";
+import { reactive, ref, getCurrentInstance, onMounted, watch } from "vue";
+import Cesiumer from "@/utils/cesiumer";
 
 const { proxy: vm } = getCurrentInstance();
 console.log("vm.$route.query", vm.$route.query);
-
 const showMapConfigDialog = ref(false);
+
 const form1 = reactive({
   vvv1: "高德卫星底图",
   vvv2: "1",
-  vvv3: true,
-  vvv4: true,
-  vvv5: [],
+  showBaseLayerPicker: true,
+  showNavigation: true,
+  showMeasurePlugin: false,
+  vvv6: [],
 });
 const rules1 = reactive({});
-
+const lonlat3_1 = ref([0, 0, 0]);
+const lonlat3_2 = ref([0, 0, 0]);
+/*---------------------------------------------------------------------------------------*/
+watch(
+  () => form1.vvv1,
+  (newValue, oldValue) => {
+    cesiumer?.viewer.baseLayerPicker.viewModel.imageryProviderViewModels.forEach(
+      function (viewModel) {
+        if (viewModel.name === newValue) {
+          viewer.baseLayerPicker.viewModel.selectedImagery = viewModel;
+        }
+      }
+    );
+  }
+);
+watch(
+  () => form1.showBaseLayerPicker,
+  (newValue, oldValue) => {
+    if (newValue) {
+      cesiumer.viewer.baseLayerPicker._dropPanel.style.display = "block";
+      cesiumer.viewer.baseLayerPicker._element.style.display = "inline-block";
+    } else {
+      cesiumer.viewer.baseLayerPicker._dropPanel.style.display = "none";
+      cesiumer.viewer.baseLayerPicker._element.style.display = "none";
+    }
+  }
+);
+watch(
+  () => form1.showNavigation,
+  (newValue, oldValue) => {
+    if (newValue) cesiumer?.createNavigatorPlugin();
+    else cesiumer?.cesiumNavigation.destroy();
+  }
+);
+watch(
+  () => form1.showMeasurePlugin,
+  (newValue, oldValue) => {
+    if (newValue) cesiumer?.createMeasurePlugin();
+    else {
+      cesiumer?.viewer.measure.destroy();
+    }
+  }
+);
+/*---------------------------------------------------------------------------------------*/
+let cesiumer = null;
+onMounted(() => {
+  cesiumer = new Cesiumer({
+    containerId: "mcCesiumContainer",
+    action: "map-config-view",
+  });
+  const { viewer } = cesiumer;
+});
+/*---------------------------------------------------------------------------------------*/
 const onSubmit = () => {
   console.log(form1.value);
+};
+const handleGetViewParams = () => {
+  const { position } = cesiumer?.storeCamera();
+  const lonlat = cesiumer?.convertCartesian3ToDegrees(position);
+  lonlat3_1.value = lonlat.map((num) => Number(num.toFixed(3)));
+};
+const handleGetFullViewParams = () => {
+  const { position } = cesiumer?.storeCamera();
+  const lonlat = cesiumer?.convertCartesian3ToDegrees(position);
+  lonlat3_2.value = lonlat.map((num) => Number(num.toFixed(3)));
 };
 </script>
 <template>
   <div class="p-5">
+    <div id="mcCesiumContainer"></div>
     <!-- :aaa="
       (() => {
         debugger;
@@ -32,7 +97,7 @@ const onSubmit = () => {
       <!-- card body -->
       <el-form
         :model="form1"
-        ref="form1"
+        ref="form1Ref"
         :rules="rules1"
         :inline="false"
         size="mini"
@@ -41,8 +106,8 @@ const onSubmit = () => {
           <el-radio-group v-model="form1.vvv1">
             <el-radio
               v-for="item in [
-                { label: '高德普通底图', bgY: '0' },
-                { label: '高德卫星底图', bgY: '-181' },
+                { label: '高德地图', bgY: '0' },
+                { label: '高德卫星', bgY: '-181' },
               ]"
               :key="item.label"
               :label="item.label"
@@ -57,7 +122,7 @@ const onSubmit = () => {
           </el-radio-group>
         </el-form-item>
         <el-form-item label="初始视图配置" size="small">
-          <el-select
+          <!-- <el-select
             v-model="form1.vvv2"
             value-key="value"
             placeholder="选择已保存的视图"
@@ -75,22 +140,13 @@ const onSubmit = () => {
               :label="item.label"
               :value="item.value"
             ></el-option>
-          </el-select>
-          <el-button
-            type="primary"
-            size="small"
-            @click="
-              $router.push({
-                path: '/',
-                query: { action: 'get-view-parameters' },
-              })
-            "
+          </el-select> -->
+          <el-button type="primary" size="small" @click="handleGetViewParams">
+            获取视图参数 {{ lonlat3_1 }}</el-button
           >
-            获取视图参数
-          </el-button>
         </el-form-item>
         <el-form-item label="全图视角配置" size="small">
-          <el-select
+          <!-- <el-select
             v-model="form1.vvv2"
             value-key="value"
             placeholder="选择已保存的视图"
@@ -108,23 +164,18 @@ const onSubmit = () => {
               :label="item.label"
               :value="item.value"
             ></el-option>
-          </el-select>
+          </el-select> -->
           <el-button
             type="primary"
             size="small"
-            @click="
-              $router.push({
-                path: '/',
-                query: { action: 'get-viewport-parameters' },
-              })
-            "
+            @click="handleGetFullViewParams"
           >
-            获取视角参数
-          </el-button>
+            获取视角参数 {{ lonlat3_2 }}</el-button
+          >
         </el-form-item>
         <el-form-item label="是否显示地图选择器" size="mini">
           <el-checkbox
-            v-model="form1.vvv3"
+            v-model="form1.showBaseLayerPicker"
             label=""
             :indeterminate="false"
             @change=""
@@ -132,7 +183,15 @@ const onSubmit = () => {
         </el-form-item>
         <el-form-item label="是否显示指北针" size="mini">
           <el-checkbox
-            v-model="form1.vvv4"
+            v-model="form1.showNavigation"
+            label=""
+            :indeterminate="false"
+            @change=""
+          ></el-checkbox>
+        </el-form-item>
+        <el-form-item label="是否显示测量工具" size="mini">
+          <el-checkbox
+            v-model="form1.showMeasurePlugin"
             label=""
             :indeterminate="false"
             @change=""
@@ -140,7 +199,7 @@ const onSubmit = () => {
         </el-form-item>
         <el-form-item label="添加模型" size="mini">
           <el-select
-            v-model="form1.vvv5"
+            v-model="form1.vvv6"
             class="ml-2"
             value-key="value"
             placeholder="地图相关模型"

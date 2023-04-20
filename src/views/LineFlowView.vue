@@ -1,11 +1,19 @@
-<script setup lang="ts">
-import { reactive, ref } from "vue";
+<script setup lang="tsx">
+import { reactive, ref, getCurrentInstance, onMounted,watch } from "vue";
+import Cesiumer from "@/utils/cesiumer";
 
 const dialogVisible1 = ref(false);
 const form1 = reactive({
   vvv1: 0,
 });
 const rules1 = reactive({});
+/*---------------------------------------------------------------------------------------*/
+let cesiumer = null;
+onMounted(() => {
+  cesiumer = new Cesiumer({ containerId: "lfCesiumContainer",action:"line-flow-view" });
+  const { viewer } = cesiumer;
+});
+/*---------------------------------------------------------------------------------------*/
 
 const beforeUpload = (file) => {
   const isGlb = file.type === "model/gltf-binary";
@@ -21,6 +29,7 @@ const beforeUpload = (file) => {
 </script>
 <template>
   <div class="p-5">
+    <div id="lfCesiumContainer"></div>
     <!--  -->
     <el-dialog
       title="潮流配置"
@@ -30,7 +39,7 @@ const beforeUpload = (file) => {
     >
       <el-form
         :model="form1"
-        ref="form1"
+        ref="form1Ref"
         :rules="rules1"
         label-width="80px"
         :inline="false"
@@ -46,7 +55,10 @@ const beforeUpload = (file) => {
             @change=""
           >
             <el-option
-              v-for="item in [{label: '效果1', value: '1'}, {label: '效果2', value: '2'}]"
+              v-for="item in [
+                { label: '效果1', value: '1' },
+                { label: '效果2', value: '2' },
+              ]"
               :key="item.value"
               :label="item.label"
               :value="item.value"
@@ -97,28 +109,20 @@ const beforeUpload = (file) => {
       <el-table
         :data="[
           {
-            name: '管线1',
-            effect: '效果1',
-            color: '颜色1',
-            size: '大小1',
-            direction: '方向1',
-            speed: '速度1',
+            name: '综合楼到南开闭站的管线',
+            effect: '发光',
+            color: '#3A42F2',
+            size: '30',
+            direction: '正向',
+            speed: '较低',
           },
           {
-            name: '管线2',
-            effect: '效果1',
-            color: '颜色2',
-            size: '大小2',
-            direction: '方向2',
-            speed: '速度2',
-          },
-          {
-            name: '管线3',
-            effect: '效果1',
-            color: '颜色3',
-            size: '大小3',
-            direction: '方向3',
-            speed: '速度3',
+            name: '2#塔台到3#塔台的管线',
+            effect: '箭头',
+            color: '#3A42F2',
+            size: '20',
+            direction: '反向',
+            speed: '适中',
           },
         ]"
         border
@@ -137,7 +141,20 @@ const beforeUpload = (file) => {
           :key="col.id"
           :label="col.label"
           :width="col.width"
-        ></el-table-column>
+        >
+          <template slot-scope="{ row, column, $index, $rowKey }">
+            <span v-if="col.id !== 'color'" :title="row[column.property]">{{
+              row[column.property].substring(0, 60)
+            }}</span>
+            <el-color-picker
+              v-else
+              v-model="row.color"
+              size="mini"
+              show-alpha
+              :predefine="['transparent']"
+            />
+          </template>
+        </el-table-column>
         <el-table-column label="操作">
           <div class="flex gap-2 flex-wrap" slot-scope="scope">
             <el-button size="mini" @click="handleLink(scope.row)">

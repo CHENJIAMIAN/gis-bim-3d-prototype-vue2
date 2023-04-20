@@ -1,5 +1,30 @@
+<script setup lang="tsx">
+import { reactive, ref, getCurrentInstance, onMounted,watch } from "vue";
+import Cesiumer from "@/utils/cesiumer";
+
+/*---------------------------------------------------------------------------------------*/
+let cesiumer = null;
+onMounted(() => {
+  cesiumer = new Cesiumer({ containerId: "mmCesiumContainer",action:"model-manage-view" });
+  const { viewer } = cesiumer;
+});
+/*---------------------------------------------------------------------------------------*/
+
+const handleTransform = (row)=>{
+  const {name,classType,color,matrix} = row;
+  // 根据信息找出tileset
+  // cesiumer.createTransformEditor(tileset);
+  if(name === '鄂州机场-中心站-室外模型'){
+    cesiumer.createTransformEditor(model);
+  }else{
+    cesiumer.transformEditor.destroy();
+  }
+}
+</script>
 <template>
   <div class="p-5">
+    <div id="mmCesiumContainer"></div>
+
     <el-card shadow="always" :body-style="{ padding: '20px' }">
       <div slot="header">
         <span>模型管理</span>
@@ -27,40 +52,16 @@
       <el-table
         :data="[
           {
-            name: '模型1',
+            name: '鄂州机场-中心站-室外模型',
             color: '#3A42F2',
-            matrix: 'matrix1',
-            class: '类别1',
+            matrix: `原始`,
+            classType: '室外',
           },
           {
-            name: '模型2',
-            color: '#3A42F2',
-            matrix: 'matrix2',
-            class: '类别2',
-          },
-          {
-            name: '模型3',
-            color: '#3A42F2',
-            matrix: 'matrix3',
-            class: '类别3',
-          },
-          {
-            name: '模型4',
-            color: '#3A42F2',
-            matrix: 'matrix4',
-            class: '类别4',
-          },
-          {
-            name: '模型5',
-            color: '#3A42F2',
-            matrix: 'matrix5',
-            class: '类别5',
-          },
-          {
-            name: '模型6',
-            color: '#3A42F2',
-            matrix: 'matrix6',
-            class: '类别6',
+            name: '鄂州机场-中心站-室内模型-房间',
+            color: '#2F45B2',
+            matrix: '已设置',
+            classType: '室内',
           },
         ]"
         border
@@ -69,7 +70,7 @@
         <el-table-column
           v-for="col in [
             { id: 'name', label: '模型', width: 80 },
-            { id: 'class', label: '模型类别', width: 80 },
+            { id: 'classType', label: '模型类别', width: 80 },
             { id: 'color', label: '告警颜色', width: 80 },
             { id: 'matrix', label: ' 位置姿态参数', width: 80 },
           ]"
@@ -79,7 +80,9 @@
           :width="col.width"
         >
           <template slot-scope="{ row, column, $index, $rowKey }">
-            <span v-if="col.id !== 'color'">{{ row[column.property] }}</span>
+            <span v-if="col.id !== 'color'" :title="row[column.property]">{{
+              row[column.property].substring(0, 60)
+            }}</span>
             <el-color-picker
               v-else
               v-model="row.color"
@@ -112,7 +115,7 @@
             <el-button class="!ml-0" size="mini" @click="handleLink(scope.row)">
               关联告警
             </el-button>
-            <el-button class="!ml-0" size="mini" @click=""
+            <el-button class="!ml-0" size="mini" @click="handleTransform(scope.row)"
               >位置姿态调整</el-button
             >
             <el-button class="!ml-0" size="mini" @click=""

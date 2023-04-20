@@ -7636,7 +7636,7 @@ var html$1 =
                    <!-- ko foreach: measurements -->\n\
                    <div class="cesium-measure-button" data-bind="click: function($data) { $parent.selectedMeasurement = $data; }, attr: {title: type}, css: {active: $data === $parent.selectedMeasurement}, html: thumbnail"></div>\n\
                    <!-- /ko -->\n\
-                   <div class="cesium-measure-button cesium-measure-help" title="Settings and Help" data-bind="click: toggleInstructions, css: {active: instructionsVisible}">\n\
+                   <div class="cesium-measure-button cesium-measure-help" title="设置和帮助" data-bind="click: toggleInstructions, css: {active: instructionsVisible}">\n\
                        <svg width="20px" height="20px" viewBox="0 0 30 30">\
                             <g transform="translate(0,-267)">\
                             <g>\

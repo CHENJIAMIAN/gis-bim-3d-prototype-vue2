@@ -1,17 +1,17 @@
 <script setup lang="tsx">
 import { onMounted, default as Vue, ref, getCurrentInstance } from "vue";
-import CesiumTool from "@/utils/cesium-tool";
+import Cesiumer from "@/utils/cesiumer";
 
 const { proxy: vm } = getCurrentInstance();
 
-let cesiumTool = null;
+let cesiumer = null;
 const aaa = ref(123);
 
 let search = "";
-
+/*---------------------------------------------------------------------------------------*/
 onMounted(() => {
-  cesiumTool = new CesiumTool();
-  const { viewer } = cesiumTool;
+  cesiumer = new Cesiumer({containerId:"cesiumContainer",action:"main-view" });
+  const { viewer } = cesiumer;
 
   const vue1 = new Vue({
     render: () => {
@@ -114,6 +114,7 @@ onMounted(() => {
   }).$mount();
   viewer._toolbar.insertBefore(vue3.$el, viewer._toolbar.firstChild);
 });
+/*---------------------------------------------------------------------------------------*/
 
 const locate = () => {};
 const onClickFlyTo = () => {
@@ -121,12 +122,12 @@ const onClickFlyTo = () => {
 };
 const onCreateTransformEditor = () => {
   // 又改一下matrix
-  cesiumTool.createTransformEditor(tileset);
+  cesiumer.createTransformEditor(tileset);
   console.log("createTransformEditor后:");
   console.log(tileset.modelMatrix.toString());
 };
 const storeCamera = () => {
-  cesiumTool.storeCamera();
+  cesiumer.storeCamera();
 };
 const handleAction = () => {
   const action = vm.$route.query.action;
@@ -209,7 +210,6 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
 }
 #toolbar {
   color: white;

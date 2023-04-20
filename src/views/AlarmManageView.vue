@@ -1,11 +1,14 @@
-<template>
-  <div class="bg-blue-100 p-5 m-5 rounded-xl">
-    <pre></pre>
-  </div>
-</template>
+<script setup lang="tsx">
+import { reactive, ref, getCurrentInstance, onMounted,watch } from "vue";
+import Cesiumer from "@/utils/cesiumer";
 
-<script setup lang="ts">
-import { reactive } from "vue";
+/*---------------------------------------------------------------------------------------*/
+let cesiumer = null;
+onMounted(() => {
+  cesiumer = new Cesiumer({ containerId: "amCesiumContainer",action:"alarm-manage-view" });
+  const { viewer } = cesiumer;
+});
+/*---------------------------------------------------------------------------------------*/
 
 const form1 = reactive({
   vvv1: "1111",
@@ -18,14 +21,17 @@ const onSubmit = () => {
   console.log(JSON.parse(JSON.stringify(form1.value)));
 };
 </script>
+
 <template>
   <div class="p-5">
+    <div id="amCesiumContainer"></div>
+
     <el-card shadow="always" :body-style="{ padding: '20px' }">
       <div slot="header">告警关联</div>
       <!-- card body -->
       <el-form
         :model="form1"
-        ref="form1"
+        ref="form1Ref"
         :rules="rules1"
         :inline="false"
         size="normal"
