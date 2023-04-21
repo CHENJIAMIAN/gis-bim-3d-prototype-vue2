@@ -1,21 +1,22 @@
 <script setup lang="tsx">
-import { reactive, ref, getCurrentInstance, onMounted,watch } from "vue";
+import { reactive, ref, getCurrentInstance, onMounted, watch,defineEmits } from "vue";
 import Cesiumer from "@/utils/cesiumer";
 
-/*---------------------------------------------------------------------------------------*/
-let cesiumer = null;
-onMounted(() => {
-  cesiumer = new Cesiumer({ containerId: "amCesiumContainer",action:"alarm-manage-view" });
-  const { viewer } = cesiumer;
-});
-/*---------------------------------------------------------------------------------------*/
-
 const form1 = reactive({
-  vvv1: "1111",
+  vvv1: "1",
   vvv2: "1",
-  vvv3: "1",
-  vvv4: "11111111",
+  effect: "1",
+  alarmContent: "XXX过载了",
+  alarmColor:'rgba(218, 72, 72, 1)',
 });
+const rules1 = reactive({
+  vvv1: [{ required: true, message: "请选择关联模型", trigger: "change" }],
+  vvv2: [{ required: true, message: "请选择告警顶牌", trigger: "change" }],
+  effect: [{ required: true, message: "请选择告警模型效果", trigger: "change" }],
+  alarmContent: [{ required: true, message: "请输入告警内容", trigger: "change" }],
+  alarmColor: [{ required: true, message: "请选择告警颜色", trigger: "change" }],
+});
+
 
 const onSubmit = () => {
   console.log(JSON.parse(JSON.stringify(form1.value)));
@@ -34,9 +35,9 @@ const onSubmit = () => {
         ref="form1Ref"
         :rules="rules1"
         :inline="false"
-        size="normal"
+        size="mini"
       >
-        <el-form-item label="选择关联模型" size="small">
+        <el-form-item label="关联模型">
           <el-select
             v-model="form1.vvv1"
             value-key="value"
@@ -48,8 +49,8 @@ const onSubmit = () => {
           >
             <el-option
               v-for="item in [
-                { label: '模型1', value: '1' },
-                { label: '模型2', value: '2' },
+                { label: '鄂州机场-中心站-室外模型', value: '1' },
+                { label: '鄂州机场-中心站-室内模型-房间', value: '2' },
               ]"
               :key="item.value"
               :label="item.label"
@@ -57,11 +58,11 @@ const onSubmit = () => {
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="选择告警" size="small">
+        <el-form-item label="选择告警">
           <el-select
             v-model="form1.vvv2"
             value-key="value"
-            placeholder="选择告警"
+            placeholder="告警顶牌"
             clearable
             filterable
             class="mr-2"
@@ -69,8 +70,8 @@ const onSubmit = () => {
           >
             <el-option
               v-for="item in [
-                { label: '视图1', value: '1' },
-                { label: '视图2', value: '2' },
+                { label: '告警顶牌样式1', value: '1' },
+                { label: '告警顶牌样式2', value: '2' },
               ]"
               :key="item.value"
               :label="item.label"
@@ -78,9 +79,9 @@ const onSubmit = () => {
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="选择告警模型效果" size="small">
+        <el-form-item label="告警模型效果">
           <el-select
-            v-model="form1.vvv3"
+            v-model="form1.effect"
             value-key="value"
             placeholder="选择告警模型效果"
             clearable
@@ -90,8 +91,8 @@ const onSubmit = () => {
           >
             <el-option
               v-for="item in [
-                { label: '效果1', value: '1' },
-                { label: '效果2', value: '2' },
+                { label: '发光', value: '1' },
+                { label: '闪烁', value: '2' },
               ]"
               :key="item.value"
               :label="item.label"
@@ -99,10 +100,13 @@ const onSubmit = () => {
             ></el-option>
           </el-select>
         </el-form-item>
+        <el-form-item label="告警颜色">
+          <el-color-picker v-model="form1.alarmColor" :show-alpha="true" ></el-color-picker>
+        </el-form-item>
         <el-form-item label="告警信息面板内容" size="normal">
           <el-input
             type="textarea"
-            v-model="form1.vvv4"
+            v-model="form1.alarmContent"
             placeholder="告警信息面板内容"
             size="normal"
             class="!w-1/2"

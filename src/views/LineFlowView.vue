@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { reactive, ref, getCurrentInstance, onMounted,watch } from "vue";
+import { reactive, ref, getCurrentInstance, onMounted, watch } from "vue";
 import Cesiumer from "@/utils/cesiumer";
 
 const dialogVisible1 = ref(false);
@@ -7,13 +7,6 @@ const form1 = reactive({
   vvv1: 0,
 });
 const rules1 = reactive({});
-/*---------------------------------------------------------------------------------------*/
-let cesiumer = null;
-onMounted(() => {
-  cesiumer = new Cesiumer({ containerId: "lfCesiumContainer",action:"line-flow-view" });
-  const { viewer } = cesiumer;
-});
-/*---------------------------------------------------------------------------------------*/
 
 const beforeUpload = (file) => {
   const isGlb = file.type === "model/gltf-binary";
@@ -26,80 +19,28 @@ const beforeUpload = (file) => {
   }
   return true;
 };
+const handleLink = () => {};
+const onSubmit = () => {
+  console.log(JSON.parse(JSON.stringify(form1)));
+};
 </script>
 <template>
   <div class="p-5">
     <div id="lfCesiumContainer"></div>
-    <!--  -->
-    <el-dialog
-      title="潮流配置"
-      :visible.sync="dialogVisible1"
-      width="60%"
-      @close=""
-    >
-      <el-form
-        :model="form1"
-        ref="form1Ref"
-        :rules="rules1"
-        label-width="80px"
-        :inline="false"
-        size="mini"
-      >
-        <el-form-item label="效果">
-          <el-select
-            v-model="form1.vvv1"
-            value-key="value"
-            placeholder="请选择效果"
-            clearable
-            filterable
-            @change=""
-          >
-            <el-option
-              v-for="item in [
-                { label: '效果1', value: '1' },
-                { label: '效果2', value: '2' },
-              ]"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            >
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="颜色">
-          <el-color-picker
-            v-model="form1.vvv2"
-            :show-alpha="true"
-          ></el-color-picker>
-        </el-form-item>
-        <el-form-item label="大小">
-          <el-input v-model="form1.vvv3"></el-input>
-        </el-form-item>
-        <el-form-item label="方向">
-          <el-input v-model="form1.vvv4"></el-input>
-        </el-form-item>
-        <el-form-item label="速度">
-          <el-input v-model="form1.vvv5"></el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="onSubmit">保存</el-button>
-          <el-button @click="dialogVisible1 = false">取消</el-button>
-        </el-form-item>
-      </el-form>
-    </el-dialog>
 
     <!--  -->
     <el-card shadow="always" :body-style="{ padding: '20px' }">
       <div slot="header">
         <span>管线潮流</span>
         <el-upload
-          class="mt-2 !ml-0"
-          :action="baseUrl + '/api/upload/gltf'"
-          :headers="headers"
+          class="mt-2 ml-2 inline"
+          action="'/api/upload/gltf'"
           :before-upload="beforeUpload"
           multiple
+          directory
+          accept=".glb,.gltf"
         >
-          <el-button size="small" type="primary" slot="trigger"
+          <el-button size="mini" type="primary" slot="trigger"
             >上传管线模型</el-button
           >
         </el-upload>
@@ -167,7 +108,65 @@ const beforeUpload = (file) => {
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!--  -->
+    <el-dialog
+      title="潮流配置"
+      :visible.sync="dialogVisible1"
+      width="60%"
+      @close=""
+    >
+      <el-form
+        :model="form1"
+        ref="form1Ref"
+        :rules="rules1"
+        label-width="80px"
+        :inline="false"
+        size="mini"
+      >
+        <el-form-item label="效果">
+          <el-select
+            v-model="form1.vvv1"
+            value-key="value"
+            placeholder="请选择效果"
+            clearable
+            filterable
+            @change=""
+          >
+            <el-option
+              v-for="item in [
+                { label: '效果1', value: '1' },
+                { label: '效果2', value: '2' },
+              ]"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="颜色">
+          <el-color-picker
+            v-model="form1.vvv2"
+            :show-alpha="true"
+          ></el-color-picker>
+        </el-form-item>
+        <el-form-item label="大小">
+          <el-input v-model="form1.vvv3"></el-input>
+        </el-form-item>
+        <el-form-item label="方向">
+          <el-input v-model="form1.vvv4"></el-input>
+        </el-form-item>
+        <el-form-item label="速度">
+          <el-input v-model="form1.vvv5"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="onSubmit">保存</el-button>
+          <el-button @click="dialogVisible1 = false">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
 
-<style></style>
+<style scoped></style>

@@ -58,16 +58,7 @@ watch(
     }
   }
 );
-/*---------------------------------------------------------------------------------------*/
-let cesiumer = null;
-onMounted(() => {
-  cesiumer = new Cesiumer({
-    containerId: "mcCesiumContainer",
-    action: "map-config-view",
-  });
-  const { viewer } = cesiumer;
-});
-/*---------------------------------------------------------------------------------------*/
+
 const onSubmit = () => {
   console.log(form1.value);
 };
@@ -80,6 +71,10 @@ const handleGetFullViewParams = () => {
   const { position } = cesiumer?.storeCamera();
   const lonlat = cesiumer?.convertCartesian3ToDegrees(position);
   lonlat3_2.value = lonlat.map((num) => Number(num.toFixed(3)));
+};
+const handlePublish = () => {
+  const { href } = vm.$router.resolve({ path: "/preView" });
+  window.open(href, "_blank");
 };
 </script>
 <template>
@@ -223,9 +218,7 @@ const handleGetFullViewParams = () => {
           <el-button size="medium">取消</el-button>
         </el-form-item>
       </el-form>
-      <el-button type="danger" @click="showMapConfigDialog = true">
-        发布地图
-      </el-button>
+      <el-button type="danger" @click="handlePublish"> 发布地图 </el-button>
     </el-card>
   </div>
 </template>

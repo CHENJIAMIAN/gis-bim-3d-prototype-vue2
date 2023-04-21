@@ -12,7 +12,11 @@ import {
 import * as Cesium from "cesium";
 
 import CesiumNavigation from "cesium-navigation-es6";
-import { TransformEditor, viewerMeasureMixin ,Measure} from "./cesium-ion-plugins";
+import {
+  TransformEditor,
+  viewerMeasureMixin,
+  Measure,
+} from "./cesium-ion-plugins";
 /*---------------------------------------------------------------------------------------*/
 window.Cesium = Cesium;
 /*---------------------------------------------------------------------------------------*/
@@ -30,6 +34,7 @@ class Cesiumer {
    */
   constructor(options) {
     this.viewer = null;
+    window.cesiumer = this;
 
     if (options.action === "alarm-manage-view") {
       this.createCesium(options.containerId);
@@ -45,6 +50,18 @@ class Cesiumer {
         fullscreenButton: true,
       });
       this.viewer.scene.primitives.add(Cesium.createOsmBuildings()); //OSM的全球粗模
+      this.setHomeButtonCamera({
+        destination: Cesium.Cartesian3.fromDegrees(
+          113.93629759724732,
+          22.49755606524342,
+          1403.3702549681943
+        ), // 设置高度为5000000米，可以根据需要调整
+        orientation: {
+          heading: Cesium.Math.toRadians(0),
+          pitch: Cesium.Math.toRadians(-30),
+          roll: Cesium.Math.toRadians(0),
+        },
+      });
       // this.createCityModelByGeojson();
       this.createMeasurePlugin(); //测量插件
     } else if (options.action === "map-config-view") {
@@ -90,6 +107,11 @@ class Cesiumer {
     // viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);//3DTilesI调试插件
   }
 
+  destroy() {
+    const { viewer } = this;
+    viewer?.destroy();
+  }
+
   createMeasurePlugin(options = {}) {
     const { viewer } = this;
     //挂载在viewer.measure
@@ -116,9 +138,13 @@ class Cesiumer {
       removeListener();
       measure.destroy();
     });
-    measure.destroy = Cesium.wrapFunction(measure, measure.destroy, function () {
-      cesiumMeasureContainer.remove();
-    });
+    measure.destroy = Cesium.wrapFunction(
+      measure,
+      measure.destroy,
+      function () {
+        cesiumMeasureContainer.remove();
+      }
+    );
 
     viewer.measure = measure;
   }
@@ -199,6 +225,13 @@ class Cesiumer {
     });
   }
 
+  flyToDegree3(degrees3 = [113.9049, 22.5149, 500.0]) {
+    const { viewer } = this;
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(...degrees3),
+    });
+  }
+
   convertCartesian3ToDegrees(cartesian3) {
     const cartographic = Cesium.Cartographic.fromCartesian(cartesian3);
     const longitude = Cesium.Math.toDegrees(cartographic.longitude);
@@ -213,7 +246,7 @@ class Cesiumer {
     return [longitude, latitude];
   }
 
-  createInfoBoxOfMonitorPoint(monitorPoints) {
+  createInfoBoxOfEntityOrModels(entityOrModel) {
     const { viewer } = this;
     // 创建 InfoBox
     var infoBox = new Cesium.InfoBox(viewer.container.id);
@@ -222,12 +255,23 @@ class Cesiumer {
       infoBox.viewModel.showInfo = false;
     });
 
+    viewer.destroy = Cesium.wrapFunction(viewer, viewer.destroy, function () {
+      infoBox.destroy();
+    });
+
     // 在点击实体时弹出 InfoBox
     viewer.screenSpaceEventHandler.setInputAction((movement) => {
       var pickedObject = viewer.scene.pick(movement.position);
+      //
+      if (
+        !entityOrModel.includes(pickedObject.id) &&
+        !entityOrModel.includes(pickedObject.primitive)
+      )
+        return;
+      //
       if (
         Cesium.defined(pickedObject) &&
-        monitorPoints.includes(pickedObject.id)
+        pickedObject.id instanceof Cesium.Entity
       ) {
         var position = pickedObject.id.position.getValue(
           viewer.clock.currentTime
@@ -237,9 +281,35 @@ class Cesiumer {
           this.convertCartesian3ToDegrees(position);
 
         var description = /* html */ `
-          <h2>${pickedObject.id.name}</h2>
-          <p>${[longitude, latitude, height]}</p>
-          `;
+            <h2>${pickedObject.id.name}</h2>
+            <p>${[longitude, latitude, height]}</p>
+            `;
+        infoBox.viewModel.showInfo = true;
+        infoBox.viewModel.description = description;
+      } else if (
+        Cesium.defined(pickedObject) &&
+        pickedObject.primitive instanceof Cesium.Model
+      ) {
+        var currentPosition = Cesium.Matrix4.getTranslation(
+          pickedObject.primitive.modelMatrix,
+          new Cesium.Cartesian3()
+        );
+        var currentCartographic =
+          Cesium.Cartographic.fromCartesian(currentPosition);
+        var currentLongitude = Cesium.Math.toDegrees(
+          currentCartographic.longitude
+        );
+        var currentLatitude = Cesium.Math.toDegrees(
+          currentCartographic.latitude
+        );
+        var currentHeight = currentCartographic.height;
+
+        var description = /* html */ `
+        <h2>${pickedObject.primitive.type}</h2>
+        <p>${pickedObject.primitive._resource._url}</p>
+        <p>${[currentLongitude, currentLatitude, currentHeight]}</p>
+        <!-- <p>巡检状态:${["已巡检"]}</p> -->
+        `;
         infoBox.viewModel.showInfo = true;
         infoBox.viewModel.description = description;
       } else {
@@ -307,7 +377,7 @@ class Cesiumer {
       groceryPinPromise,
       hospitalPinPromise,
     ]).then(async (pins) => {
-      this.createInfoBoxOfMonitorPoint([
+      this.createInfoBoxOfEntityOrModels([
         bluePin,
         questionPin,
         await groceryPinPromise,
@@ -359,6 +429,7 @@ class Cesiumer {
           ),
         })
       ));
+      this.createInfoBoxOfEntityOrModels([model]);
 
       const removeListener = model.readyEvent.addEventListener(() => {
         // this.createTransformEditor(model);
@@ -660,7 +731,7 @@ class Cesiumer {
     viewer.cesiumWidget.creditContainer.style.display = "none"; //隐藏版权信息
     this.createNavigatorPlugin();
     this._customBaseLayerPicker(); //添加高德底图
-    viewer.camera.setView({
+    this.setHomeButtonCamera({
       destination: Cesium.Cartesian3.fromDegrees(
         116.4074,
         39.9042,
@@ -745,36 +816,15 @@ class Cesiumer {
   }
 
   //设置默认位置，重置HomeButton位置
-  setCesiumCamera() {
+  setHomeButtonCamera(view) {
     const { viewer } = this;
     if (!viewer.homeButton) return;
 
-    // 初始化相机参数
-    const initialOrientation = HeadingPitchRoll.fromDegrees(0, -90, 0);
-    const homeCameraView = {
-      // [115.04080787632513, 30.34712342090306, 13655.54656925315]//鄂州机场
-      destination: Cartesian3.fromDegrees(
-        115.04080787632513,
-        30.34712342090306,
-        13655.54656925315
-      ),
-      orientation: {
-        //Heading //想象再飞机头,左右方向的改变
-        //Pitch //飞机头俯仰角度的改变
-        //Roll //飞机身向左右翻滚
-        //Range //距中心的距离，以米为单位。
-        heading: initialOrientation.heading,
-        ///不知道设多少可以从控制台的camera.heading获取！！/
-        pitch: initialOrientation.pitch,
-        roll: initialOrientation.roll,
-      },
-    };
-    //HeadingPitchRange
-    viewer.scene.camera.setView(homeCameraView); // 设置初始视野视角
-    //也可以重写 homeButton
+    viewer.scene.camera.setView(view); // 设置初始视野视角
+    //重写 homeButton
     viewer.homeButton.viewModel.command.beforeExecute.addEventListener((e) => {
       e.cancel = true;
-      viewer.camera.flyTo(homeCameraView);
+      viewer.camera.flyTo(view);
     });
   }
 

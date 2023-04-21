@@ -1,14 +1,9 @@
 <script setup lang="tsx">
 import { reactive, ref, getCurrentInstance, onMounted,watch } from "vue";
 import Cesiumer from "@/utils/cesiumer";
+import { Model } from "cesium";
 
-/*---------------------------------------------------------------------------------------*/
-let cesiumer = null;
-onMounted(() => {
-  cesiumer = new Cesiumer({ containerId: "mmCesiumContainer",action:"model-manage-view" });
-  const { viewer } = cesiumer;
-});
-/*---------------------------------------------------------------------------------------*/
+
 
 const handleTransform = (row)=>{
   const {name,classType,color,matrix} = row;
@@ -19,6 +14,10 @@ const handleTransform = (row)=>{
   }else{
     cesiumer.transformEditor.destroy();
   }
+}
+const handleColorChange = (row)=>{
+  const {color} = row;
+  model.color = Cesium.Color.fromCssColorString(color);
 }
 </script>
 <template>
@@ -89,6 +88,7 @@ const handleTransform = (row)=>{
               size="mini"
               show-alpha
               :predefine="['transparent']"
+              @change="handleColorChange(row)"
             />
           </template>
         </el-table-column>
