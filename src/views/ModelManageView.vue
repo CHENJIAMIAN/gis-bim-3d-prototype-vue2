@@ -92,7 +92,7 @@ const handleColorChange = (row)=>{
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="操作" width="250px">
           <div class="flex gap-2 flex-wrap" slot-scope="scope">
             <el-button
               type="primary"
@@ -112,14 +112,14 @@ const handleColorChange = (row)=>{
             >
               删除
             </el-button>
-            <el-button class="!ml-0" size="mini" @click="handleLink(scope.row)">
+            <!-- <el-button class="!ml-0" size="mini" @click="handleLink(scope.row)">
               关联告警
-            </el-button>
+            </el-button> -->
             <el-button class="!ml-0" size="mini" @click="handleTransform(scope.row)"
               >位置姿态调整</el-button
             >
             <el-button class="!ml-0" size="mini" @click=""
-              >关联告警/信息面板</el-button
+              >是否展示信息面板</el-button
             >
           </div>
         </el-table-column>

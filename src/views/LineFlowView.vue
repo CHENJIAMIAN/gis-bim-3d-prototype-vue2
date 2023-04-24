@@ -43,6 +43,7 @@ const onSubmit = () => {
           <el-button size="mini" type="primary" slot="trigger"
             >上传管线模型</el-button
           >
+          参考模型的选择
         </el-upload>
       </div>
 

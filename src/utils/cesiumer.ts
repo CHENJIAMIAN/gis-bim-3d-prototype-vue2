@@ -700,6 +700,11 @@ class Cesiumer {
     const baseOptions = {
       infoBox: false, // 是否显示信息框
       homeButton: false, // 是否显示 Home 按钮
+      // baseLayer: Cesium.ImageryLayer.fromProviderAsync(//离线时，CesiumJS 附带一组来自 Natural Earth II 的低分辨率图像，格式为Assets/Textures/NaturalEarthII.
+      //   Cesium.TileMapServiceImageryProvider.fromUrl(
+      //     Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII")
+      //   )
+      // ),
       baseLayerPicker: false, // 是否显示图层选择器
       fullscreenButton: false, // 是否显示全屏按钮
       animation: false, // 是否显示动画小部件（左下角仪表盘）
@@ -743,6 +748,7 @@ class Cesiumer {
         roll: Cesium.Math.toRadians(0),
       },
     });
+    viewer.scene.screenSpaceCameraController.inertiaZoom=0.9 //设置丝滑惯性缩放，默认0.8，越接近1惯性越大
     // viewer.extend(Cesium.viewerCesiumInspectorMixin);//使用Inspector面板
     // viewer.scene.debugShowFramesPerSecond = true; // 显示帧率
     // viewer.scene.globe.depthTestAgainstTerrain = true; // 控制视角不转到地下（确保在地形后面的物体被正确地遮挡，只有最前端的对象可见）

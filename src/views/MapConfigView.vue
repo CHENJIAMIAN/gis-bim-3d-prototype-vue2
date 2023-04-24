@@ -192,7 +192,7 @@ const handlePublish = () => {
             @change=""
           ></el-checkbox>
         </el-form-item>
-        <el-form-item label="添加模型" size="mini">
+        <el-form-item label="关联模型" size="mini">
           <el-select
             v-model="form1.vvv6"
             class="ml-2"
@@ -215,7 +215,7 @@ const handlePublish = () => {
           <el-button size="medium" type="primary" @click="onSubmit">
             保存
           </el-button>
-          <el-button size="medium">取消</el-button>
+          <el-button size="medium">重置</el-button>
         </el-form-item>
       </el-form>
       <el-button type="danger" @click="handlePublish"> 发布地图 </el-button>

@@ -29,6 +29,9 @@ const onSubmit = () => {
 
     <el-card shadow="always" :body-style="{ padding: '20px' }">
       <div slot="header">告警关联</div>
+      <el-checkbox>{{'是否默认'}}</el-checkbox>
+      
+      
       <!-- card body -->
       <el-form
         :model="form1"
@@ -113,6 +116,14 @@ const onSubmit = () => {
             clearable
             @change=""
           ></el-input>
+          <pre>
+            选择面板UI：
+              告警统计信息
+              告警列表详情
+                /alarmReally页面
+              告警信息（需绑定测点）
+                /alarmReally页面-设置拉下的选项们
+          </pre>
         </el-form-item>
         <el-form-item>
           <el-button size="medium" type="primary" @click="onSubmit">
