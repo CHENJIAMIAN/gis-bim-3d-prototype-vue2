@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+
+    <link href="style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <style>
+      #toolbar {
+        background: rgba(42, 42, 42, 0.8);
+        padding: 4px;
+        border-radius: 4px;
+      }
+      #toolbar input {
+        vertical-align: middle;
+        padding-top: 2px;
+        padding-bottom: 2px;
+      }
+    </style>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <div id="loadingOverlay"><h1>Loading...</h1></div>
+    <div id="toolbar">
+      <div>Height</div>
+      <input
+        type="range"
+        min="-100.0"
+        max="100.0"
+        step="1"
+        data-bind="value: height, valueUpdate: 'input'"
+      />
+      <input type="text" size="5" data-bind="value: height" />
+    </div>
+
+    <script>
+      const viewer = new Cesium.Viewer("cesiumContainer", {
+        // shadows: true,
+      });
+
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+        margin: 0px;
+        padding: 0px;
+        height: 100%;
+      }
+      #cesiumContainer {
+        height: 100%;
+      }
+
+      #toolbar {
+        background: rgba(42, 42, 42, 0.8);
+        padding: 4px;
+        border-radius: 4px;
+      }
+      #toolbar input {
+        vertical-align: middle;
+        padding-top: 2px;
+        padding-bottom: 2px;
+      }
+    </style>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <div id="loadingOverlay"><h1>Loading...</h1></div>
+    <div id="toolbar">
+      <div>Height</div>
+      <input
+        type="range"
+        min="-100.0"
+        max="100.0"
+        step="1"
+        data-bind="value: height, valueUpdate: 'input'"
+      />
+      <input type="text" size="5" data-bind="value: height" />
+    </div>
+
+    <script>
+            // Get your token from https://cesium.com/ion/tokens
+            // Cesium.Ion.defaultAccessToken =
+            //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1Yzg3ZDEzOS0zN2Q1LTQ2N2YtOWJhMy1mNWU4MWY5N2ExYzkiLCJpZCI6MjAxMzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzY4MTIzNzR9.SfNeHedDyXWLIPiNbc4qSsHBACm7uvaqRsQprL2J4Cw";
+
+            const viewer = new Cesium.Viewer("cesiumContainer", {
+              // shadows: true,
+              // terrainProvider: new Cesium.CesiumTerrainProvider({
+              //   url: "http://localhost:3000/"
+              // })
+            });
+
+
+              Cesium.Material._materialCache.addMaterial(MaterialType, {
+                fabric: {
+                  type: MaterialType,
+                  uniforms: {
+                    color: new Cesium.Color(1.0, 0.0, 0.0, 0.5),
+                    image: Cesium.Material.DefaultImageId,
+                    time: -20,
+                  },
+                  source: _getPolylineShader(),
+                },
+                translucent: function (material) {
+                  return true;
+                },
+              });
+
+            let data = [
+              [104.04790878295898, 30.665822980309592],
+              [104.02791023254393, 30.641600497335878],
+              [104.02336120605469, 30.683534290222845],
+            ];
+            positions = [];
+            for (i = 0; i < 40; ++i) {
+              positions.push(Cesium.Cartesian3.fromDegrees(-100.0 + i, 15.0));
+            }
+            const datasouce = viewer.entities.add({
+              polyline: {
+                positions: positions,
+                width: 16,
+                material: new Cesium.PolylineTrailLinkMaterialProperty(
+                  Cesium.Color.CYAN,
+                  "https://cdn.glitch.global/7add5c60-3b54-4c54-9aef-98e24335d0ce/f099481b-1381-4a2b-8161-7c07450a42f1.image.png?v=1682670267114",
+                  3000
+                ),
+              },
+            });
+            viewer.flyTo(datasouce);
+
+            // Model positioning ===============================================
+
+      const position = Cesium.Cartesian3.fromDegrees(
+        -123.0744619,
+        44.0503706,
+        0
+      );
+      const hpr = new Cesium.HeadingPitchRoll(0, 0, 0);
+      const fixedFrameTransform = Cesium.Transforms.localFrameToFixedFrameGenerator(
+        "north",
+        "west"
+      );
+            const model = viewer.scene.primitives.add(
+            await Cesium.Model.fromGltfAsync({
+              url: url,
+              customShader: customShader,
+              modelMatrix: Cesium.Transforms.headingPitchRollToFixedFrame(
+                position,
+                hpr,
+                Cesium.Ellipsoid.WGS84,
+                fixedFrameTransform
+              ),
+            })
+          );
+
+          const removeListener = model.readyEvent.addEventListener(() => {
+            viewer.camera.flyToBoundingSphere(model.boundingSphere, {
+              duration: 0.5,
+            });
+
+            removeListener();
+          });
+    </script>
+  </body>
+</html>
