@@ -1,6 +1,7 @@
 3D Tile规范
 
-[![开放地理空间联盟](https://pic4.58cdn.com.cn/nowater/webim/big/n_v21aa2e8f13c7a420ab4a73526fee9aeff.png)](https://pic4.58cdn.com.cn/nowater/webim/big/n_v21aa2e8f13c7a420ab4a73526fee9aeff.png)
+![开放地理空间联盟](https://image.baidu.com/search/down?url=https://tvax3.sinaimg.cn/large/9d0983efgy1hduazo23g9j208c02tgmj.jpg)
+
 
 帕特里克科齐编辑肖恩·里利编辑
 
@@ -627,7 +628,7 @@ boundingVolume.sphere属性是一个包含四个数字的数组，用于定义�
 
 下面的屏幕截图显示了金丝雀码头根瓦片的边界体积。以红色显示的 tile.boundingVolume包围了 tileset 的整个区域；content.boundingVolume以蓝色显示，仅包含根图块中的四个特征（模型）。
 
-[![image.png](https://pic7.58cdn.com.cn/nowater/webim/big/n_v2eba790818ba54c96ab1b11e3b035a5d2.png)](https://pic7.58cdn.com.cn/nowater/webim/big/n_v2eba790818ba54c96ab1b11e3b035a5d2.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/ad097623-e653-4eb8-8e09-945e4e15bdb0)
 
 图 5 — 瓦片集根瓦片的边界体积。[从Cyber​​City3D](http://www.cybercity3d.com/)构建数据。[来自必应地图的](https://www.microsoft.com/maps/)图像数据
 
@@ -771,7 +772,9 @@ glTF 定义了自己的节点层次结构并使用*y*向上坐标系。任何特
 
 对于图块集的计算变换（上面代码中的transformToRoot ）的示例，请考虑：
 
-[![image.png](https://pic6.58cdn.com.cn/nowater/webim/big/n_v204f010131901458aacd14fc5c987a5e4.png)](https://pic6.58cdn.com.cn/nowater/webim/big/n_v204f010131901458aacd14fc5c987a5e4.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/529924c2-916d-4c64-9aeb-db914418d1aa)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/529924c2-916d-4c64-9aeb-db914418d1aa)
+
 
 图 6 — 包含 glTF 内容的图块示例图块集的结构
 
@@ -829,7 +832,7 @@ transformToRoot ) { // 将 4x4 transformToRoot 应用于此图块的位置和边
 
 图块 JSON 对象包含以下属性。
 
-[![image.png](https://pic8.58cdn.com.cn/nowater/webim/big/n_v22aa1c01173944c5d9630fc8673d63620.png)](https://pic8.58cdn.com.cn/nowater/webim/big/n_v22aa1c01173944c5d9630fc8673d63620.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/225289ee-8e22-40d1-8890-3d8a96d8df33)
 
 图 7 — 图块 JSON 对象的元素
 
@@ -880,7 +883,8 @@ content.boundingVolume属性定义了一个可选的[边界体积](https://porta
 
 也可以为一个图块定义多个内容：contents属性（上面未显示）是一个包含一个或多个内容的数组。内容和内容是互斥的。当 tile 具有单一内容时，它应该使用内容来向后兼容仅支持 3D Tiles 1.0 的引擎。多个内容允许对图块内容进行不同的表示——例如，一个作为三角形网格，一个作为点云：
 
-[![image.png](https://pic8.58cdn.com.cn/nowater/webim/big/n_v24ba16e3d2df843ef93b7d22158ac3ab5.png)](https://pic8.58cdn.com.cn/nowater/webim/big/n_v24ba16e3d2df843ef93b7d22158ac3ab5.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/dfb5a9fc-f0c3-4fc4-bdca-5ed6aefdae44)
+
 
 图 8 — 定义多个内容的磁贴示例
 
@@ -914,7 +918,8 @@ content.boundingVolume属性定义了一个可选的[边界体积](https://porta
 
 这些组可以与组元数据相关联： content.group属性的值是在 tileset 的顶级数组中定义的组数组的索引。该数组的每个元素都是元数据实体，如[元数据](https://portal.ogc.org/files/102132#core-metadata)部分中所定义。这允许应用程序根据内容所属的组执行样式或过滤：
 
-[![image.png](https://pic5.58cdn.com.cn/nowater/webim/big/n_v2a8930135771444eb8c74af128eeb8fde.png)](https://pic5.58cdn.com.cn/nowater/webim/big/n_v2a8930135771444eb8c74af128eeb8fde.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/4c1321de-1def-4a8c-bfe6-241ecb2a2184)
+
 
 图 9 — 基于内容组的呈现选项图示
 
@@ -992,7 +997,8 @@ root是一个对象，它使用[上一节](https://portal.ogc.org/files/102132#c
 
 要创建树中树，tile 的content.uri可以指向外部 tileset（另一个 tileset JSON 文件的 uri）。例如，这可以将每个城市存储在一个 tileset 中，然后拥有一个全局 tilesets 的 tilesets。
 
-[![image.png](https://pic5.58cdn.com.cn/nowater/webim/big/n_v24cfb3f63b08f4f8bb5d70801c4eafc8f.png)](https://pic5.58cdn.com.cn/nowater/webim/big/n_v24cfb3f63b08f4f8bb5d70801c4eafc8f.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/016fbfc0-e1c1-40d9-acf6-3ad5b4a7f3d2)
+
 
 图 10 — 引用其他图块集的图块集
 
@@ -1012,11 +1018,12 @@ root是一个对象，它使用[上一节](https://portal.ogc.org/files/102132#c
 
 如上所述，树具有空间连贯性；每个图块都有一个完全包围其内容的边界体积，子图块的内容完全在父图块的边界体积内。这并不意味着孩子的边界体积完全在其父边界体积内。例如：
 
-[![image.png](https://pic1.58cdn.com.cn/nowater/webim/big/n_v23ba1ca7236c2473393c3b1940924a4f0.png)](https://pic1.58cdn.com.cn/nowater/webim/big/n_v23ba1ca7236c2473393c3b1940924a4f0.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/f4f2a883-c721-4338-9461-3110e00bc10c)
+
 
 图 12 — 地形图块的边界球体。
 
-[![image.png](https://pic8.58cdn.com.cn/nowater/webim/big/n_v2dd6e648606ab49ceaa447844c108dd1c.png)](https://pic8.58cdn.com.cn/nowater/webim/big/n_v2dd6e648606ab49ceaa447844c108dd1c.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/5eea7da4-5b8b-472f-811e-7fd9b2ad8685)
 
 图 13 — 四个子图块的边界球体。子级的内容完全在父级的包围体内，但子级的包围体不在，因为它们没有紧密贴合。
 
@@ -1046,7 +1053,8 @@ root是一个对象，它使用[上一节](https://portal.ogc.org/files/102132#c
 
 例如，这是 Canary Wharf 的根磁贴及其子磁贴。请注意左下角，边界体积不包括左侧没有建筑物出现的水域：
 
-[![image.png](https://pic3.58cdn.com.cn/nowater/webim/big/n_v2054a1dd35f314835b9c88a0e8936f41e.png)](https://pic3.58cdn.com.cn/nowater/webim/big/n_v2054a1dd35f314835b9c88a0e8936f41e.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/513a871d-38ad-4eb9-8f61-7d454f4c9b83)
+
 
 [图 16 — 从Cyber​​City3D](http://www.cybercity3d.com/)构建数据。[来自必应地图的](https://www.microsoft.com/maps/)图像数据
 
@@ -1058,7 +1066,8 @@ root是一个对象，它使用[上一节](https://portal.ogc.org/files/102132#c
 
 下面，绿色建筑物在左孩子中，紫色建筑物在右孩子中。请注意，Tile重叠，因此中间的两座绿色和一座紫色建筑没有分开。
 
-[![image.png](https://pic3.58cdn.com.cn/nowater/webim/big/n_v250349c8baa6a46cebca4c9fb3c5557ab.png)](https://pic3.58cdn.com.cn/nowater/webim/big/n_v250349c8baa6a46cebca4c9fb3c5557ab.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/c8bf290e-1d20-420a-acdd-2eb0548b207c)
+
 
 [图 18 — 从Cyber​​City3D](http://www.cybercity3d.com/)构建数据。[来自必应地图的](https://www.microsoft.com/maps/)图像数据
 
@@ -1090,7 +1099,8 @@ root是一个对象，它使用[上一节](https://portal.ogc.org/files/102132#c
 
 3D Tiles 通过支持任意数量的子图块来实现统一、非统一和重叠的网格。例如，这是剑桥非均匀重叠网格的自上而下视图：
 
-[![image.png](https://pic4.58cdn.com.cn/nowater/webim/big/n_v240a90e549602446084b8d7e9c32c7614.png)](https://pic4.58cdn.com.cn/nowater/webim/big/n_v240a90e549602446084b8d7e9c32c7614.png)
+![image](https://github.com/CHENJIAMIAN/Blog/assets/20126997/eea0871e-f957-4505-afd4-1dac2e6a38e9)
+
 
 图 22 — 从[Cyber​​City3D](http://www.cybercity3d.com/)构建数据。[来自必应地图的](https://www.microsoft.com/maps/)图像数据
 
