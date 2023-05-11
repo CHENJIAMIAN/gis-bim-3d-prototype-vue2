@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <script>
+      const viewer = new Cesium.Viewer("cesiumContainer", {});
+      viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
+      const inspectorViewModel = viewer.cesium3DTilesInspector.viewModel;
+
+      let tileset;
+      (async () => {
+        try {
+          tileset = await Cesium.Cesium3DTileset.fromUrl(
+            "http://localhost:3000/public/Cesium3DTiles/Batched/BatchedWGS84/tileset.json",
+            { enableDebugWireframe: true }
+          );
+          viewer.scene.globe.depthTestAgainstTerrain = true;
+
+          viewer.scene.primitives.add(tileset);
+          viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(-75.616, 40.04, 500),
+            orientation: {
+              heading: Cesium.Math.toRadians(45),
+              pitch: Cesium.Math.toRadians(-45),
+              roll: 0.0,
+            },
+          });
+        } catch (error) {
+          console.log(`Error loading tileset: ${error}`);
+        }
+      })();
+    </script>
+  </body>
+</html>
