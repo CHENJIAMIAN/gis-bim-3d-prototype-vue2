@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+    <!--
+      JSPM Generator Import Map
+      Edit URL: https://generator.jspm.io/#Y2VhYGBkDM0rySzJSU1hSE4tzizNdTDUMzQw1TMAAKINybkdAA
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "cesium": "https://ga.jspm.io/npm:cesium@1.105.0/Source/Cesium.js"
+        },
+        "scopes": {
+          "https://ga.jspm.io/": {
+            "@cesium/engine": "https://ga.jspm.io/npm:@cesium/engine@2.3.0/index.js",
+            "@cesium/widgets": "https://ga.jspm.io/npm:@cesium/widgets@2.2.0/index.js",
+            "@tweenjs/tween.js": "https://ga.jspm.io/npm:@tweenjs/tween.js@18.6.4/dist/tween.cjs.js",
+            "@zip.js/zip.js/lib/zip-no-worker.js": "https://ga.jspm.io/npm:@zip.js/zip.js@2.4.26/lib/zip-no-worker.js",
+            "autolinker": "https://ga.jspm.io/npm:autolinker@4.0.0/dist/es2015/index.js",
+            "bitmap-sdf": "https://ga.jspm.io/npm:bitmap-sdf@1.0.4/index.js",
+            "dompurify": "https://ga.jspm.io/npm:dompurify@3.0.3/dist/purify.js",
+            "earcut": "https://ga.jspm.io/npm:earcut@2.2.4/src/earcut.js",
+            "grapheme-splitter": "https://ga.jspm.io/npm:grapheme-splitter@1.0.4/index.js",
+            "http": "https://ga.jspm.io/npm:@jspm/core@2.0.1/nodelibs/browser/http.js",
+            "https": "https://ga.jspm.io/npm:@jspm/core@2.0.1/nodelibs/browser/https.js",
+            "jsep": "https://ga.jspm.io/npm:jsep@1.3.8/dist/jsep.js",
+            "kdbush": "https://ga.jspm.io/npm:kdbush@4.0.2/index.js",
+            "lerc": "https://ga.jspm.io/npm:lerc@2.0.0/LercDecode.js",
+            "mersenne-twister": "https://ga.jspm.io/npm:mersenne-twister@1.1.0/src/mersenne-twister.js",
+            "meshoptimizer": "https://ga.jspm.io/npm:meshoptimizer@0.18.1/index.module.js",
+            "nosleep.js": "https://ga.jspm.io/npm:nosleep.js@0.12.0/dist/NoSleep.min.js",
+            "process": "https://ga.jspm.io/npm:@jspm/core@2.0.1/nodelibs/browser/process.js",
+            "protobufjs/dist/minimal/protobuf.js": "https://ga.jspm.io/npm:protobufjs@7.2.3/dist/minimal/protobuf.js",
+            "rbush": "https://ga.jspm.io/npm:rbush@3.0.1/rbush.min.js",
+            "topojson-client": "https://ga.jspm.io/npm:topojson-client@3.1.0/dist/topojson-client.js",
+            "tslib": "https://ga.jspm.io/npm:tslib@2.5.0/tslib.es6.js",
+            "urijs": "https://ga.jspm.io/npm:urijs@1.19.11/src/URI.js",
+            "url": "https://ga.jspm.io/npm:@jspm/core@2.0.1/nodelibs/browser/url.js",
+            "zlib": "https://ga.jspm.io/npm:@jspm/core@2.0.1/nodelibs/browser/zlib.js"
+          }
+        }
+      }
+    </script>
+
+    <!-- ES Module Shims: Import maps polyfill for modules browsers without import maps support (Safari 16.3) -->
+    <script
+      async
+      src="https://ga.jspm.io/npm:es-module-shims@1.5.1/dist/es-module-shims.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <div id="cesiumContainer" class="fullSize"></div>
+
+    <script type="module">
+      window.CESIUM_BASE_URL =
+        "https://cesium.com/downloads/cesiumjs/releases/1.105/Build/Cesium";
+
+      import * as Cesium from "cesium";
+      // const {
+      //   Viewer,
+      //   Terrain,
+      //   viewerCesiumInspectorMixin,
+      //   Primitive,
+      //   GeometryInstance,
+      //   BoxGeometry,
+      //   PerInstanceColorAppearance,
+      //   Cartesian3,
+      //   Matrix4,
+      //   Transforms,
+      //   ColorGeometryInstanceAttribute,
+      //   Color,
+      //   RectangleGeometry,
+      //   Rectangle,
+      //   BillboardCollection,
+      // } = Cesium;
+
+      const viewer = new Cesium.Viewer("cesiumContainer", {});
+      viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
+      const inspectorViewModel = viewer.cesium3DTilesInspector.viewModel;
+
+      let tileset;
+      (async () => {
+        try {
+          tileset = await Cesium.Cesium3DTileset.fromUrl(
+            "http://localhost:3000/public/Cesium3DTiles/Batched/BatchedWGS84/tileset.json",
+            { enableDebugWireframe: true }
+          );
+          viewer.scene.globe.depthTestAgainstTerrain = true;
+
+          viewer.scene.primitives.add(tileset);
+          viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(-75.616, 40.04, 500),
+            orientation: {
+              heading: Cesium.Math.toRadians(45),
+              pitch: Cesium.Math.toRadians(-45),
+              roll: 0.0,
+            },
+          });
+        } catch (error) {
+          console.log(`Error loading tileset: ${error}`);
+        }
+      })();
+    </script>
+  </body>
+</html>
