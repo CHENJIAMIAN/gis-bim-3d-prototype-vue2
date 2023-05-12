@@ -10,8 +10,8 @@
       rel="stylesheet"
     />
     <!--
-      JSPM Generator Import Map
-      Edit URL: https://generator.jspm.io/#Y2VhYGBkDM0rySzJSU1hSE4tzizNdTDUMzQw1TMAAKINybkdAA
+      JSPM 生成器导入图
+      编辑网址：https://generator.jspm.io/#Y2VhYGBkDM0rySzJSU1hSE4tzizNdTDUMzQw1TMAAKINybkdAA
     -->
     <script type="importmap">
       {
@@ -50,7 +50,7 @@
       }
     </script>
 
-    <!-- ES Module Shims: Import maps polyfill for modules browsers without import maps support (Safari 16.3) -->
+    <!--ES Module Shims：为不支持导入映射的模块浏览器导入映射 polyfill (Safari 16.3)-->
     <script
       async
       src="https://ga.jspm.io/npm:es-module-shims@1.5.1/dist/es-module-shims.js"
@@ -65,6 +65,7 @@
         "https://cesium.com/downloads/cesiumjs/releases/1.105/Build/Cesium";
 
       import * as Cesium from "cesium";
+      window.Cesium = Cesium;
       // const {
       //   Viewer,
       //   Terrain,
