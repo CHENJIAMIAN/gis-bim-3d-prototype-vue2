@@ -29,7 +29,8 @@
         try {
           tileset = await Cesium.Cesium3DTileset.fromUrl(
             // "http://localhost:3000/public/Cesium3DTiles/Batched/BatchedWGS84/tileset.json",
-            "http://localhost:63402/tileset.json",
+            "http://localhost:3031/api-file/file/get/getFileByPath?path=/tilesets/Seattle/tileset.json",
+            // serve -s -C -p 3031
             {
               enableDebugWireframe: true,
               modelMatrix: Cesium.Transforms.headingPitchRollToFixedFrame(
