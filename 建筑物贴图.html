@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/CesiumUnminified/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <script>
+      window.CESIUM_BASE_URL =
+        "https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium";
+
+      const viewer = new Cesium.Viewer("cesiumContainer", {});
+      viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
+      const inspectorViewModel = viewer.cesium3DTilesInspector.viewModel;
+      // const position = Cesium.Cartesian3.fromDegrees(
+      //   113.9245585597,
+      //   22.5518170443,
+      //   0
+      // );
+      // const hpr = new Cesium.HeadingPitchRoll(0, 0, 0);
+      // const fixedFrameTransform =
+      //   Cesium.Transforms.localFrameToFixedFrameGenerator("north", "west");
+      let tileset;
+      (async () => {
+        try {
+          tileset = await Cesium.Cesium3DTileset.fromUrl(
+            // "http://localhost:3000/public/Cesium3DTiles/Batched/BatchedWGS84/tileset.json",
+            // "http://211.149.185.229:8081/data/house3dtiles/house/tileset.json",
+            // "http://211.149.185.229:8081/data/country_build/chengdu_ajust_clip/tileset.json",
+            // "http://data.mars3d.cn/3dtiles/bim-daxue/tileset.json", //大学教学楼
+            // "http://data.mars3d.cn/3dtiles/bim-ditiezhan/tileset.json", //轻轨地铁站
+            // "http://data.mars3d.cn/3dtiles/bim-qiaoliang/tileset.json", //桥梁
+            // "http://data.mars3d.cn/3dtiles/jzw-hefei/tileset.json", //合肥市建筑物
+            // "http://data.mars3d.cn/3dtiles/jzw-hefei2/tileset.json", //合肥市建筑物
+            // "http://data.mars3d.cn/3dtiles/jzw-shanghai/tileset.json", //上海市建筑物
+            // "http://data.mars3d.cn/3dtiles/max-daqiao/tileset.json", // 大桥
+            // "http://data.mars3d.cn/3dtiles/max-fcfh/tileset.json", //居民楼(分层分户)
+            // "http://data.mars3d.cn/3dtiles/max-fsdzm/tileset.json", //水利闸门
+            // "http://data.mars3d.cn/3dtiles/max-piping/tileset.json", //地下管网
+            // "http://data.mars3d.cn/3dtiles/max-shihua/tileset.json", //石化工厂
+            "http://data.mars3d.cn/3dtiles/max-ytlhz/tileset.json", //油田联合站
+            // "http://data.mars3d.cn/3dtiles/pnts-ganta/tileset.json", //高压线塔杆
+            // "http://data.mars3d.cn/3dtiles/qx-dyt/tileset.json", //大雁塔倾斜摄影
+            // "http://data.mars3d.cn/3dtiles/qx-hfdxy/tileset.json", //合肥大学科技园倾斜摄影
+            // "http://data.mars3d.cn/3dtiles/qx-shequ/tileset.json", //县城社区倾斜摄影
+            // "http://data.mars3d.cn/3dtiles/qx-simiao/tileset.json", //文庙倾斜摄影
+            // "http://data.mars3d.cn/3dtiles/qx-teh/tileset.json", //合肥天鹅湖
+            // "http://data.mars3d.cn/3dtiles/qx-xuexiao-dth/tileset.json", //学校-单体classifytileset
+            // "http://data.mars3d.cn/3dtiles/qx-xuexiao/tileset.json", //校园
+
+            // serve -s -C -p 3031
+            {
+              enableDebugWireframe: true,
+              // modelMatrix: Cesium.Transforms.headingPitchRollToFixedFrame(
+              //   position,
+              //   hpr,
+              //   Cesium.Ellipsoid.WGS84,
+              //   fixedFrameTransform
+              // ),
+            }
+          );
+          viewer.scene.globe.depthTestAgainstTerrain = false;
+          viewer.scene.primitives.add(tileset);
+          viewer.flyTo(tileset);
+
+          // setStyle0();
+        } catch (error) {
+          console.log(`Error loading tileset: ${error}`);
+        }
+
+        function setStyle0() {
+          tileset.customShader = new Cesium.CustomShader({
+            // lightingModel: Cesium.LightingModel.UNLIT,
+            //  lightingModel: Cesium.LightingModel.PBR,
+            //设置变量，由顶点着色器传递给片元着色器
+            varyings: {
+              v_normalMC: Cesium.VaryingType.VEC3,
+              v_st: Cesium.VaryingType.VEC3,
+            },
+            //外部传给顶点着色器或者片元着色器
+            uniforms: {
+              u_texture: {
+                value: new Cesium.TextureUniform({
+                  url: "./public/textures/buildings.png",
+                }),
+                type: Cesium.UniformType.SAMPLER_2D,
+              },
+              u_texture1: {
+                value: new Cesium.TextureUniform({
+                  url: "./public/textures/buildings.png",
+                }),
+                type: Cesium.UniformType.SAMPLER_2D,
+              },
+            },
+            //贴纹理
+            //顶点着色器
+            //将法向量从顶点着色器设置变量传给片元着色器
+            vertexShaderText: /* glsl */ `
+              void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+                    v_normalMC = vsInput.attributes.normalMC;
+                    v_st=vsInput.attributes.positionMC ;   
+              }`,
+            //片元着色器
+            fragmentShaderText: /* glsl */ `
+              void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+                  vec3 positionMC = fsInput.attributes.positionMC;
+                  //这里是设置要贴图的图片的尺寸，设置小了会重复
+                  float width = 37.0;
+                  float height = 40.0;
+                  vec3 rgb;
+                  //这是是设置了屋顶的颜色，当和法向量平行时，就是屋顶，这里设置0.95，相当于垂直，建筑物四周开始贴图
+                  if (dot(vec3(0.0, 1.0, 0.0), v_normalMC) > 0.95) {
+                      material.diffuse = vec3(1.0, 0.0, 0.0);
+                  } else {
+                      float textureX = 0.0;
+                      float dotYAxis = dot(vec3(0.0, 0.0, 1.0), v_normalMC);
+                      // cos(45deg) 约等于 0.71，这里是建筑物四周的向量与法向量会大于四十五度夹角
+                      if (dotYAxis > 0.71 || dotYAxis < -0.71) {
+                          //x代表的是前后面
+                          textureX = mod(positionMC.x, width) / width;
+                      } else {
+                        //z代表的是左右面
+                          textureX = mod(positionMC.z, width) / width;
+                      }
+                      float textureY = mod(positionMC.y, height) / height;
+                      //我这里是根据建筑物高度贴了两张不同的图片
+                      if (positionMC.y > 30.0) {
+                          rgb = texture(u_texture1, vec2(textureX, textureY)).rgb;       
+                      } else {
+                          rgb = texture(u_texture, vec2(textureX, textureY)).rgb;
+                      }
+                      material.diffuse = rgb;
+                    }
+              }`,
+          });
+        }
+
+        function setStyle1() {
+          // globalMsg(`当前效果是：根据视角距离，模型呈现不同颜色`);
+
+          tileset.customShader = new Cesium.CustomShader({
+            lightingModel: Cesium.LightingModel.UNLIT,
+            fragmentShaderText: /* glsl */ `
+              void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material)
+              {
+                material.diffuse = vec3(0.0, 0.0, 1.0);
+                material.diffuse.g = -fsInput.attributes.positionEC.z / 1.0e4;
+              } `,
+          });
+        }
+
+        function setStyle2() {
+          // globalMsg(`当前效果是：动态渐变+动态光环的特效`);
+
+          const upZ = tileset.upAxis === Cesium.Axis.Z;
+
+          tileset.customShader = new Cesium.CustomShader({
+            lightingModel: Cesium.LightingModel.UNLIT,
+            fragmentShaderText: /* glsl */ `
+              void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material)
+              {
+                vec4 position = czm_inverseModelView * vec4(fsInput.attributes.positionEC,1); // 位置
+
+                // 注意shader中写浮点数是，一定要带小数点，否则会报错，比如0需要写成0.0，1要写成1.0
+                float _baseHeight = 0.0; // 物体的基础高度，需要修改成一个合适的建筑基础高度
+                float _heightRange = 60.0; // 高亮的范围(_baseHeight ~ _baseHeight + _heightRange)
+                float _glowRange = 100.0; // 光环的移动范围(高度)
+
+                // 建筑基础色
+                float mars_height = ${
+                  upZ ? "position.z" : "position.y"
+                } - _baseHeight;
+                float mars_a11 = fract(czm_frameNumber / 120.0) * 3.14159265 * 2.0;
+                float mars_a12 = mars_height / _heightRange + sin(mars_a11) * 0.1;
+                material.diffuse = vec3(0.0, 0.0, 1.0); // 颜色
+                material.diffuse *= vec3(mars_a12);// 渐变
+
+                // 动态光环
+                float time = fract(czm_frameNumber / 360.0);
+                time = abs(time - 0.5) * 2.0;
+                float mars_h = clamp(mars_height / _glowRange, 0.0, 1.0);
+                float mars_diff = step(0.005, abs(mars_h - time));
+                material.diffuse += material.diffuse * (1.0 - mars_diff);
+              } `,
+          });
+        }
+
+        //  夜景贴图
+        function setStyle3() {
+          // globalMsg(`当前效果是：夜景贴图的特效`);
+
+          tileset.customShader = new Cesium.CustomShader({
+            lightingModel: Cesium.LightingModel.UNLIT,
+            varyings: {
+              v_mars3d_normalMC: Cesium.VaryingType.VEC3,
+            },
+            uniforms: {
+              u_mars3d_texture: {
+                value: new Cesium.TextureUniform({
+                  url: "./public/textures/buildings.png",
+                }),
+                type: Cesium.UniformType.SAMPLER_2D,
+              },
+            },
+            vertexShaderText: /* glsl */ `
+              void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput){
+                  v_mars3d_normalMC = vsInput.attributes.normalMC;
+                }`,
+            fragmentShaderText: /* glsl */ `
+              void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+                vec3 positionMC = fsInput.attributes.positionMC;
+                if (dot(vec3(0.0, 0.0, 1.0), v_mars3d_normalMC) > 0.95) {
+                  //处理楼顶:统一处理成深色。
+                  material.diffuse = vec3(0.079, 0.107, 0.111);
+                } else {
+                  //处理四个侧面: 贴一样的图
+                  float mars3d_width = 100.0;
+                  float mars3d_height = 100.0;
+                  float mars3d_textureX = 0.0;
+                  float mars3d_dotXAxis = dot(vec3(0.0, 1.0, 0.0), v_mars3d_normalMC);
+                  if (mars3d_dotXAxis > 0.52 || mars3d_dotXAxis < -0.52) {
+                    mars3d_textureX = mod(positionMC.x, mars3d_width) / mars3d_width;
+                  } else {
+                    mars3d_textureX = mod(positionMC.y, mars3d_width) / mars3d_width;
+                  }
+                  float mars3d_textureY = mod(positionMC.z, mars3d_height) / mars3d_height;
+                  material.diffuse = texture(u_mars3d_texture, vec2(mars3d_textureX, mars3d_textureY)).rgb;
+                }
+              }`,
+            // fragmentShaderText: /* glsl 如果贴图方向不对，用下面这个 */ `
+            // void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+            //   vec3 positionMC = fsInput.attributes.positionMC;
+            //   if (dot(vec3(0.0, 1.0, 0.0), v_mars3d_normalMC) > 0.95) {
+            //     //处理楼顶:统一处理成深色。
+            //     material.diffuse = vec3(0.079, 0.107, 0.111);
+            //   } else {
+            //     //处理四个侧面: 贴一样的图
+            //     float mars3d_width = 100.0;
+            //     float mars3d_height = 100.0;
+            //     float mars3d_textureX = 0.0;
+            //     float mars3d_dotXAxis = dot(vec3(0.0, 0.0, 1.0), v_mars3d_normalMC);
+            //     if (mars3d_dotXAxis > 0.52 || mars3d_dotXAxis < -0.52) {
+            //       mars3d_textureX = mod(positionMC.x, mars3d_width) / mars3d_width;
+            //     } else {
+            //       mars3d_textureX = mod(positionMC.z, mars3d_width) / mars3d_width;
+            //     }
+            //     float mars3d_textureY = mod(positionMC.y, mars3d_height) / mars3d_height;
+            //     material.diffuse = texture(u_mars3d_texture, vec2(mars3d_textureX, mars3d_textureY)).rgb;
+            //   }
+            // }`
+          });
+        }
+
+        //
+        function setStyle4() {
+          // globalMsg(`当前效果是：色彩动态变化的特效`);
+
+          // 特效
+          const customShader = new Cesium.CustomShader({
+            uniforms: {
+              u_build0: {
+                type: Cesium.UniformType.SAMPLER_2D,
+                value: new Cesium.TextureUniform({
+                  url: "./public/textures/buildings-blue.png",
+                }),
+              },
+              u_build1: {
+                type: Cesium.UniformType.SAMPLER_2D,
+                value: new Cesium.TextureUniform({
+                  url: "./public/textures/buildings-colors.png",
+                }),
+              },
+            },
+            varyings: {
+              v_positionLC: Cesium.VaryingType.VEC4,
+              v_featureId: Cesium.VaryingType.FLOAT,
+            },
+            vertexShaderText: /* glsl */ `
+              void vertexMain(VertexInput vsInput, inout czm_modelVertexOutput vsOutput) {
+                  v_positionLC = vec4(vsInput.attributes.positionMC.xyz, 1.0);
+                  v_featureId = v_featureId_0;
+              }`,
+            fragmentShaderText: /* glsl */ `
+              vec2 mars_rotate(vec2 uv, vec2 center, float rotation) {
+                  float dx = uv.x - center.x;
+                  float dy = uv.y - center.y;
+                  float ex = dx * cos(rotation) - dy * sin(rotation);
+                  float ey = dx * sin(rotation) + dy * cos(rotation);
+                  return vec2(ex + center.x,  ey + center.y);
+              }
+              void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+                  vec3 positionEC = fsInput.attributes.positionEC;
+                  vec3 normalEC = fsInput.attributes.normalEC;
+                  vec2 uv = fsInput.attributes.texCoord_0;
+                  uv = mars_rotate(uv,vec2(0.5,0.5), 0.5);
+                  vec3 positionMC = fsInput.attributes.positionMC;
+                  float times = czm_frameNumber / 60.0;
+                  vec4 textureColor = texture(u_build0,vec2(fract(float(uv.s) - times), uv.t));
+                  vec4 textureColor2 = texture(u_build0,vec2(fract(uv.s),float(uv.t) - times));
+                  vec4 textureColor3 = texture(u_build1,vec2(fract(uv.s),float(uv.t) - times));
+                  // material
+                  material.diffuse += textureColor.rgb + textureColor2.rgb + textureColor3.rgb;
+                  material.alpha += textureColor.a + textureColor3.a;
+              }  `,
+          });
+
+          tileset.customShader = customShader;
+        }
+      })();
+    </script>
+  </body>
+</html>
