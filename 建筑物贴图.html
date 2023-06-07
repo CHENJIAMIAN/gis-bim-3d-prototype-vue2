@@ -42,11 +42,11 @@
             // "http://data.mars3d.cn/3dtiles/max-fsdzm/tileset.json", //水利闸门
             // "http://data.mars3d.cn/3dtiles/max-piping/tileset.json", //地下管网
             // "http://data.mars3d.cn/3dtiles/max-shihua/tileset.json", //石化工厂
-            "http://data.mars3d.cn/3dtiles/max-ytlhz/tileset.json", //油田联合站
+            // "http://data.mars3d.cn/3dtiles/max-ytlhz/tileset.json", //油田联合站
             // "http://data.mars3d.cn/3dtiles/pnts-ganta/tileset.json", //高压线塔杆
             // "http://data.mars3d.cn/3dtiles/qx-dyt/tileset.json", //大雁塔倾斜摄影
             // "http://data.mars3d.cn/3dtiles/qx-hfdxy/tileset.json", //合肥大学科技园倾斜摄影
-            // "http://data.mars3d.cn/3dtiles/qx-shequ/tileset.json", //县城社区倾斜摄影
+            "http://data.mars3d.cn/3dtiles/qx-shequ/tileset.json", //县城社区倾斜摄影
             // "http://data.mars3d.cn/3dtiles/qx-simiao/tileset.json", //文庙倾斜摄影
             // "http://data.mars3d.cn/3dtiles/qx-teh/tileset.json", //合肥天鹅湖
             // "http://data.mars3d.cn/3dtiles/qx-xuexiao-dth/tileset.json", //学校-单体classifytileset
@@ -68,10 +68,15 @@
           viewer.flyTo(tileset);
 
           // setStyle0();
+          // setStyle1();
+          // setStyle2();
+          // setStyle3();
+          // setStyle4();
         } catch (error) {
           console.log(`Error loading tileset: ${error}`);
         }
 
+        // csdn看来的贴图
         function setStyle0() {
           tileset.customShader = new Cesium.CustomShader({
             // lightingModel: Cesium.LightingModel.UNLIT,
@@ -138,7 +143,7 @@
               }`,
           });
         }
-
+      // 当前效果是：根据视角距离，模型呈现不同颜色
         function setStyle1() {
           // globalMsg(`当前效果是：根据视角距离，模型呈现不同颜色`);
 
@@ -152,7 +157,7 @@
               } `,
           });
         }
-
+        //当前效果是：动态渐变+动态光环的特效
         function setStyle2() {
           // globalMsg(`当前效果是：动态渐变+动态光环的特效`);
 
@@ -189,7 +194,7 @@
           });
         }
 
-        //  夜景贴图
+        //当前效果是：夜景贴图的特效
         function setStyle3() {
           // globalMsg(`当前效果是：夜景贴图的特效`);
 
@@ -255,7 +260,7 @@
           });
         }
 
-        //
+        //当前效果是：色彩动态变化的特效
         function setStyle4() {
           // globalMsg(`当前效果是：色彩动态变化的特效`);
 
