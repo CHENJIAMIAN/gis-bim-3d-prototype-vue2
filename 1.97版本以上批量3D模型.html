@@ -12,10 +12,10 @@
     <title>Cesium Demo</title>
     <script src="https://sandcastle.cesium.com/Sandcastle-header.js"></script>
     <!-- 引入Cesium -->
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.96/Build/Cesium/Cesium.js"></script>
+    <script src="https://unpkg.com/cesium@1.104.0/Build/CesiumUnminified/Cesium.js"></script>
     <link
-      href="https://cesium.com/downloads/cesiumjs/releases/1.96/Build/Cesium/Widgets/widgets.css"
       rel="stylesheet"
+      href="https://unpkg.com/cesium@1.104.0/Build/Cesium/Widgets/widgets.css"
     />
   </head>
   <body
@@ -30,7 +30,7 @@
     <div id="toolbar"></div>
     <script id="cesium_sandcastle_script">
       window.CESIUM_BASE_URL =
-        "https://cesium.com/downloads/cesiumjs/releases/1.96/Build/Cesium";
+        "https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium";
 
       window.startup = function (Cesium) {
         "use strict";
@@ -43,11 +43,9 @@
         const camera = viewer.camera;
         scene.debugShowFramesPerSecond = true;
 
-        const instancedArraysExtension = context._instancedArrays;
         let count = 1024;
         let spacing = 0.0002;
         let url = "/public/SampleData/models/CesiumAir/Cesium_Air.glb";
-        let useCollection = true;
 
         const centerLongitude = -75.61209431;
         const centerLatitude = 40.042530612;
@@ -62,31 +60,6 @@
             new Cesium.HeadingPitchRange(heading, pitch, range)
           );
           camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-        }
-
-        function createCollection(instances) {
-          const collection = scene.primitives.add(
-            new Cesium.ModelInstanceCollection({
-              url: url,
-              instances: instances,
-            })
-          );
-
-          collection.readyPromise
-            .then(function (collection) {
-              // Play and loop all animations at half-speed
-              collection.activeAnimations.addAll({
-                multiplier: 0.5,
-                loop: Cesium.ModelAnimationLoop.REPEAT,
-              });
-              orientCamera(
-                collection._boundingSphere.center,
-                collection._boundingSphere.radius
-              );
-            })
-            .catch(function (error) {
-              window.alert(error);
-            });
         }
 
         function createModels(instances) {
@@ -168,11 +141,7 @@
             }
           }
 
-          if (useCollection) {
-            createCollection(instances);
-          } else {
-            createModels(instances);
-          }
+          createModels(instances);
         }
 
         // Scale picked instances
@@ -181,9 +150,7 @@
           const pickedInstance = scene.pick(movement.position);
           if (Cesium.defined(pickedInstance)) {
             console.log(pickedInstance);
-            const instance = useCollection
-              ? pickedInstance
-              : pickedInstance.primitive;
+            const instance = pickedInstance.primitive;
             const scaleMatrix = Cesium.Matrix4.fromUniformScale(1.1);
             const modelMatrix = Cesium.Matrix4.multiply(
               instance.modelMatrix,
@@ -270,25 +237,8 @@
 
         Sandcastle.addToolbarMenu([
           {
-            text: "Instancing Enabled",
-            onselect: function () {
-              context._instancedArrays = instancedArraysExtension;
-              useCollection = true;
-              reset();
-            },
-          },
-          {
-            text: "Instancing Disabled",
-            onselect: function () {
-              context._instancedArrays = undefined;
-              useCollection = true;
-              reset();
-            },
-          },
-          {
             text: "Individual models",
             onselect: function () {
-              useCollection = false;
               reset();
             },
           },
