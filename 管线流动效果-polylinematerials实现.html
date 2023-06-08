@@ -15,16 +15,16 @@
       const PolylineTrailLinkType = "PolylineTrailLink";
 
       const PolylineTrailLinkSource = /* glsl */ `
-czm_material czm_getMaterial(czm_materialInput materialInput) 
-{
-  czm_material material = czm_getDefaultMaterial(materialInput);
-  vec2 st = materialInput.st;
-  vec4 sampledColor = texture(image, vec2(fract(st.s - time), st.t));
-  material.alpha = sampledColor.a * color.a;
-  material.diffuse = (sampledColor.rgb + color.rgb) / 2.0;
-  return material;
-}
-`;
+          czm_material czm_getMaterial(czm_materialInput materialInput) 
+          {
+            czm_material material = czm_getDefaultMaterial(materialInput);
+            vec2 st = materialInput.st;
+            vec4 sampledColor = texture(image, vec2(fract(st.s - time), st.t));
+            material.alpha = sampledColor.a * color.a;
+            material.diffuse = (sampledColor.rgb + color.rgb) / 2.0;
+            return material;
+          }
+      `;
 
       class PolylineTrailLinkMaterialProperty {
         /**
