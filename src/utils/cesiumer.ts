@@ -736,6 +736,22 @@ class Cesiumer {
     viewer.cesiumWidget.creditContainer.style.display = "none"; //隐藏版权信息
     this.createNavigatorPlugin();
     this._customBaseLayerPicker(); //添加高德底图
+
+    // viewer.baseLayerPicker 怎么默认为ProviderViewModel的name为"高德地图"的那一个
+    {
+      // 获取名为 "高德地图" 的 ProviderViewModel
+      var gaodeProviderViewModel;
+      viewer.baseLayerPicker.viewModel.imageryProviderViewModels.forEach(
+        function (viewModel) {
+          if (viewModel.name === "高德地图") {
+            gaodeProviderViewModel = viewModel;
+          }
+        }
+      );
+      // 将名为 "高德地图" 的 ProviderViewModel 设置为默认图层
+      viewer.baseLayerPicker.viewModel.selectedImagery = gaodeProviderViewModel;
+    }
+    
     this.setHomeButtonCamera({
       destination: Cesium.Cartesian3.fromDegrees(
         116.4074,
@@ -748,7 +764,7 @@ class Cesiumer {
         roll: Cesium.Math.toRadians(0),
       },
     });
-    viewer.scene.screenSpaceCameraController.inertiaZoom=0.9 //设置丝滑惯性缩放，默认0.8，越接近1惯性越大
+    viewer.scene.screenSpaceCameraController.inertiaZoom = 0.9; //设置丝滑惯性缩放，默认0.8，越接近1惯性越大
     // viewer.extend(Cesium.viewerCesiumInspectorMixin);//使用Inspector面板
     // viewer.scene.debugShowFramesPerSecond = true; // 显示帧率
     // viewer.scene.globe.depthTestAgainstTerrain = true; // 控制视角不转到地下（确保在地形后面的物体被正确地遮挡，只有最前端的对象可见）

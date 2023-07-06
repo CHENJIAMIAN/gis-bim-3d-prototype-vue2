@@ -33,6 +33,9 @@
             // serve -s -C -p 3031
             {
               enableDebugWireframe: true,
+              // modelMatrix: Cesium.Transforms.eastNorthUpToFixedFrame(
+              //   Cesium.Cartesian3.fromDegrees(113, 23)
+              // ),
               modelMatrix: Cesium.Transforms.headingPitchRollToFixedFrame(
                 position,
                 hpr,

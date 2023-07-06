@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.84/Build/CesiumUnminified/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.84/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <script>
+      window.CESIUM_BASE_URL =
+        "https://cesium.com/downloads/cesiumjs/releases/1.84/Build/Cesium";
+
+      const viewer = new Cesium.Viewer("cesiumContainer", {
+        imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+          url: "https://a.tile.openstreetmap.org/",
+        }),
+      });
+
+      const position = Cesium.Cartesian3.fromDegrees(
+        113.9245585597,
+        22.5518170443,
+        0
+      );
+
+      const entity = viewer.entities.add({
+        position: position,
+        model: {
+          url: "http://localhost:3001/xiaofangyuan.glb",
+        },
+      });
+      viewer.trackedEntity = entity;
+    </script>
+  </body>
+</html>

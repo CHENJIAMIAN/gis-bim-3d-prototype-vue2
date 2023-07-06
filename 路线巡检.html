@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/CesiumUnminified/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <script>
+      window.CESIUM_BASE_URL =
+        "https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium";
+
+      var viewer = new Cesium.Viewer("cesiumContainer", {
+        selectionIndicator: false, // 取消实体选中时的高亮
+      }); // 创建Cesium Viewer实例
+      //   取消双击实体时的追踪
+      viewer.screenSpaceEventHandler.removeInputAction(
+        Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK
+      );
+      viewer.screenSpaceEventHandler.removeInputAction(
+        Cesium.ScreenSpaceEventType.LEFT_CLICK
+      );
+
+      viewer.baseLayerPicker.viewModel.imageryProviderViewModels.forEach(
+        function (providerViewModel) {
+          if (providerViewModel.name === "Open­Street­Map") {
+            viewer.baseLayerPicker.viewModel.selectedImagery =
+              providerViewModel;
+          }
+        }
+      );
+      /*读本地存储的检线路---------------------------------------------------------------------------------------*/
+      let storedArray = [];
+      let xunjianxianToPlay = null;
+      {
+        function updateOutputDom(storedArray) {
+          // JavaScript
+          let outputElement = document.getElementById("output");
+          if (outputElement) {
+            // 删除子元素
+            while (outputElement.firstChild) {
+              outputElement.removeChild(outputElement.firstChild);
+            }
+            // 删除 outputElement 元素
+            outputElement.parentNode.removeChild(outputElement);
+          }
+          // JavaScript
+          outputElement = document.createElement("div");
+          outputElement.id = "output";
+          document.body.appendChild(outputElement);
+
+          const listElement = document.createElement("ul");
+          outputElement.appendChild(listElement);
+
+          storedArray.forEach((obj, index) => {
+            Object.entries(obj).forEach(([key, value]) => {
+              const listItemElement = document.createElement("li");
+              listElement.appendChild(listItemElement);
+
+              const inputElement = document.createElement("input");
+              inputElement.type = "xunjianxian";
+              inputElement.type = "radio";
+              inputElement.name = "output";
+              inputElement.value = `${key}:${value
+                .map((i) => Object.values(i))
+                .toString()}`;
+              inputElement.dataset.index = index; // 添加一个自定义数据属性来记录索引
+              inputElement.addEventListener("change", handleRadioChange); // 设置 change 事件处理程序
+              listItemElement.appendChild(inputElement);
+
+              const labelElement = document.createElement("label");
+              labelElement.textContent = `${key}:${value
+                .map((i) => Object.values(i))
+                .toString()}`;
+              listItemElement.appendChild(labelElement);
+            });
+          });
+        }
+
+        function handleRadioChange(event) {
+          const selectedValue = event.target.value;
+          const selectedIndex = event.target.dataset.index;
+          //Object.values返回数组
+          xunjianxianToPlay = Object.values(storedArray[selectedIndex])[0];
+          console.log(
+            `选中了值为 "${selectedValue}" 的单选按钮，索引为 ${selectedIndex},具体为`,
+            xunjianxianToPlay
+          );
+          {
+            var polylineEntity = viewer.entities.getById("mypolylineplay");
+            viewer.entities.remove(polylineEntity);
+            polylineEntity = viewer.entities.add({
+              id: "mypolylineplay", // 设置实体的唯一标识
+              // 创建一个实体（即线）
+              polyline: {
+                positions: xunjianxianToPlay, // 设置线的途径点数组
+                material: Cesium.Color.RED, // 设置线的颜色
+              },
+            });
+          }
+        }
+        // 监听 storage 事件
+        window.addEventListener("storage", function (event) {
+          if (event.key === "xunjianxianlumen") {
+            // 当 myArray 在本地存储中被更改时的逻辑
+            console.log("storage has been updated:", event.newValue);
+            updateOutputDom(storedArray);
+          }
+        });
+        // 尝试从本地存储中获取对象数组
+        storedArray = JSON.parse(localStorage.getItem("xunjianxianlumen"));
+        // 检查存储中是否有对象数组
+        if (storedArray && Array.isArray(storedArray)) {
+          // 如果有，使用存储的对象数组
+          console.log("xunjianxianlumen", storedArray);
+          updateOutputDom(storedArray);
+        } else {
+          // 如果没有，创建一个新的对象数组
+          storedArray = [];
+          localStorage.setItem("xunjianxianlumen", JSON.stringify(storedArray));
+        }
+      }
+      /*播放---------------------------------------------------------------------------------------*/
+      {
+        const playButton = document.createElement("button");
+        playButton.textContent = "播放";
+        playButton.addEventListener("click", () => {
+          const destory = playXunjianxian(xunjianxianToPlay);
+          const clearButton = document.createElement("button");
+          clearButton.textContent = "清除";
+          clearButton.addEventListener("click", () => {
+            destory();
+            clearButton.remove();
+          });
+          document.body.appendChild(clearButton);
+        });
+
+        document.body.appendChild(playButton);
+      }
+      /*绘制巡检---------------------------------------------------------------------------------------*/
+      var linePositions = new Proxy([], {
+        set: function (target, property, value, receiver) {
+          var res = Reflect.set(target, property, value, receiver);
+          //   console.log("positions 变量已更新:", target);
+          polylineEntity.polyline.positions = target;
+          return res;
+        },
+      });
+
+      const proxyHandler = {
+        get: function (target, key) {
+          //   console.log("读取属性", key);
+          return target[key];
+        },
+        set: function (target, key, value) {
+          console.log("设置属性", key, "为", value);
+          target[key] = value;
+          // 在此处可以进行更新视图的操作，如重新绘制 Cesium 实体等
+          switchControl.checked = value; // 更新开关控件的值
+          return true;
+        },
+      };
+
+      const proxy = new Proxy({ drawing: false }, proxyHandler);
+
+      // 监听开关控件的变化，并更新 drawing 变量
+      const switchControl = document.createElement("input");
+      switchControl.type = "checkbox";
+      switchControl.checked = proxy.drawing;
+      const switchLabel = document.createElement("label");
+      switchLabel.textContent = "开始绘制巡检线路";
+      switchLabel.appendChild(switchControl);
+      document.body.appendChild(switchLabel);
+
+      switchControl.addEventListener("change", function () {
+        proxy.drawing = switchControl.checked;
+      });
+
+      var ssehandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas); // 创建ScreenSpaceEventHandler实例
+
+      var polylineEntity = null; // 创建线实体
+
+      var pointEntity = null; // 创建点实体集合
+
+      ssehandler.setInputAction(function (click) {
+        if (proxy.drawing === false) return;
+        var ray = viewer.camera.getPickRay(click.position); // 获取鼠标点击处的射线
+        var position = viewer.scene.globe.pick(ray, viewer.scene); // 获取射线与地球的交点坐标
+        var cartographicPosition =
+          Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+        var longitude = Cesium.Math.toDegrees(cartographicPosition.longitude);
+        var latitude = Cesium.Math.toDegrees(cartographicPosition.latitude);
+        var height = cartographicPosition.height;
+
+        if (Cesium.defined(position)) {
+          pointEntity = viewer.entities.add({
+            flag: "waypoint", // 为点实体对象添加标志属性，表示这是巡检线路途经点
+            // 创建一个实体集合（即点实体）
+            position: position, // 设置点的位置数组
+            point: {
+              pixelSize: 8, // 设置点的大小
+              color: Cesium.Color.YELLOW, // 设置点的颜色
+              outlineColor: Cesium.Color.BLACK, // 设置点的轮廓线颜色
+              outlineWidth: 1, // 设置点的轮廓线宽度
+              heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 设置点的高度基准面
+            },
+            label: {
+              text: [longitude, latitude].join(","),
+              font: "16px sans-serif",
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+              fillColor: Cesium.Color.WHITE,
+              outlineColor: Cesium.Color.BLACK,
+              outlineWidth: 1,
+              pixelOffset: new Cesium.Cartesian2(0, -20),
+              heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            },
+          });
+          //
+          // 如果正在绘制线
+          if (!polylineEntity) {
+            polylineEntity = viewer.entities.add({
+              id: "mypolyline", // 设置实体的唯一标识
+              // 创建一个实体（即线）
+              polyline: {
+                positions: linePositions, // 设置线的途径点数组
+                material: Cesium.Color.RED, // 设置线的颜色
+              },
+            });
+          }
+          // 通过 id 获取实体对象
+          var entityById = viewer.entities.getById("mypolyline");
+          console.log("获取到的line实体对象为:", entityById);
+          linePositions.push(position);
+        }
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK); // 监听鼠标左键点击事件
+
+      ssehandler.setInputAction(function (movement) {
+        if (proxy.drawing === false) return;
+        // 如果正在绘制线
+        var ray = viewer.camera.getPickRay(movement.endPosition); // 获取鼠标当前位置的射线
+        var position = viewer.scene.globe.pick(ray, viewer.scene); // 获取射线与地球的交点坐标
+        if (Cesium.defined(position) && polylineEntity) {
+          // 判断是否有点
+          if (linePositions.length > 1) {
+            linePositions.pop(); // 先将当前位置之前的点删除
+            linePositions.push(position); // 再将当前位置添加到途径点数组中
+          } else if (linePositions.length === 1) {
+            linePositions.push(position); // 再将当前位置添加到途径点数组中
+          }
+        }
+      }, Cesium.ScreenSpaceEventType.MOUSE_MOVE); // 监听鼠标移动事件
+
+      ssehandler.setInputAction(function () {
+        proxy.drawing = false;
+
+        {
+          var waypointEntities = viewer.entities.values.filter(function (
+            entity
+          ) {
+            return entity.flag === "waypoint";
+          });
+
+          var polylineEntity = viewer.entities.getById("mypolyline");
+
+          console.log("waypoint 实体对象：", waypointEntities);
+          console.log("polyline 实体对象：", polylineEntity);
+
+          waypointEntities.forEach(function (entity) {
+            viewer.entities.remove(entity);
+          });
+        }
+        {
+          console.log("途径点坐标：");
+          linePositions.forEach(function (position) {
+            var cartographic = Cesium.Cartographic.fromCartesian(position);
+            var longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            var latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            var height = cartographic.height;
+            console.log([longitude, latitude, height].join(", "));
+          });
+        }
+        {
+          if (linePositions.length < 1) {
+            alert("检查到要存储的线为[]");
+          } else {
+            storedArray.push({ [Date()]: linePositions });
+            const value = JSON.stringify(storedArray);
+            localStorage.setItem("xunjianxianlumen", value);
+            {
+              //   另一个窗口改localStorage才会触发这个窗口的`storage`事件,自己是触发不了自己的:
+              // 创建 StorageEvent 对象
+              const storageEvent = new StorageEvent("storage", {
+                key: "xunjianxianlumen",
+                newValue: value,
+                storageArea: localStorage,
+              });
+              // 手动分派 storage 事件
+              window.dispatchEvent(storageEvent);
+            }
+          }
+        }
+        viewer.entities.remove(polylineEntity);
+        linePositions = []; // 清空途径点数组
+      }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK); // 监听鼠标右键点击事件
+
+      /*-----------------巡检动画的逻辑----------------------------------------------------------------------*/
+
+      function playXunjianxian(xunjianxianToPlay) {
+        if (!xunjianxianToPlay) return;
+        //Set bounds of our simulation time
+        const start = Cesium.JulianDate.fromDate(new Date());
+        const stop = Cesium.JulianDate.addSeconds(
+          start,
+          360,
+          new Cesium.JulianDate()
+        );
+
+        {
+          //确保观看者在所需的时间观看。
+          viewer.clock.startTime = start.clone();
+          viewer.clock.stopTime = stop.clone();
+          viewer.clock.currentTime = start.clone();
+          viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //最后循环
+          viewer.clock.multiplier = 1;
+          viewer.clock.shouldAnimate = true;
+          //将时间线设置为模拟边界
+          viewer.timeline.zoomTo(start, stop);
+        }
+
+        const property = new Cesium.SampledPositionProperty();
+        for (let i = 0; i < xunjianxianToPlay.length; i++) {
+          const time = Cesium.JulianDate.addSeconds(
+            start,
+            i * (360 / (xunjianxianToPlay.length - 1)),
+            new Cesium.JulianDate()
+          );
+          property.addSample(time, xunjianxianToPlay[i]);
+          console.log(time, xunjianxianToPlay[i]);
+        }
+        const position = property;
+        console.log("SampledPositionProperty", position);
+
+        //实际创建实体
+        const entity = viewer.entities.add({
+          point: {
+            pixelSize: 8, // 设置点的大小
+            color: Cesium.Color.RED, // 设置点的颜色
+            outlineColor: Cesium.Color.BLACK, // 设置点的轮廓线颜色
+            outlineWidth: 1, // 设置点的轮廓线宽度
+          },
+          //将实体可用性设置为与模拟时间相同的间隔。
+          availability: new Cesium.TimeIntervalCollection([
+            new Cesium.TimeInterval({
+              start: start,
+              stop: stop,
+            }),
+          ]),
+
+          //使用我们计算的位置
+          position: position,
+
+          viewFrom: new Cesium.Cartesian3(-100.0, 0.0, 100000.0),
+
+          //根据位置移动自动计算方向。
+          orientation: new Cesium.VelocityOrientationProperty(position),
+
+          //将路径显示为以 1 秒增量采样的粉红色线。
+          path: {
+            resolution: 1,
+            material: new Cesium.PolylineGlowMaterialProperty({
+              glowPower: 0.1,
+              color: Cesium.Color.YELLOW,
+            }),
+            width: 10,
+          },
+        });
+
+        viewer.trackedEntity = entity;
+        // entity.position.setInterpolationOptions({
+        //   interpolationDegree: 1,
+        //   interpolationAlgorithm: Cesium.LinearApproximation,
+        // });
+        entity.position.setInterpolationOptions({
+          interpolationDegree: 2,
+          interpolationAlgorithm: Cesium.HermitePolynomialApproximation,
+        });
+        // entity.position.setInterpolationOptions({
+        //   interpolationDegree: 5,
+        //   interpolationAlgorithm: Cesium.LagrangePolynomialApproximation,
+        // });
+        return function destory() {
+          viewer.entities.remove(entity);
+        };
+      }
+    </script>
+  </body>
+</html>
