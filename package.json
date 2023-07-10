@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
+    "serve": "serve -C",
     "serve tileset": "cd D:\\Desktop\\gis-bim-3d-prototype-vue2\\public\\Cesium3DTiles && serve -C",
     "build": "run-p build-only ",
     "preview": "vite preview --port 4173",

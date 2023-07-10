@@ -12,7 +12,6 @@
     <script>
       window.CESIUM_BASE_URL =
         "https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium";
-
       const viewer = new Cesium.Viewer("cesiumContainer", {});
       viewer.extend(Cesium.viewerCesium3DTilesInspectorMixin);
       const inspectorViewModel = viewer.cesium3DTilesInspector.viewModel;
@@ -29,7 +28,8 @@
         try {
           tileset = await Cesium.Cesium3DTileset.fromUrl(
             // "http://localhost:3000/public/Cesium3DTiles/Batched/BatchedWGS84/tileset.json",
-            "http://211.149.185.229:8081/data/house3dtiles/house/tileset.json",
+            // "http://211.149.185.229:8081/data/house3dtiles/house/tileset.json",
+            " http://localhost:3001/tileset.json",
             // serve -s -C -p 3031
             {
               enableDebugWireframe: true,

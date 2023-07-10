@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <meta name="description" content="Create 3D models using glTF." />
+    <meta name="cesium-sandcastle-labels" content="3D Tiles Next" />
+    <title>Cesium Demo</title>
+    <script src="https://sandcastle.cesium.com/Sandcastle-header.js"></script>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/CesiumUnminified/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="sandcastle-loading"
+    data-sandcastle-bucket="bucket-requirejs.html"
+  >
+    <style>
+      @import url(https://sandcastle.cesium.com/templates/bucket.css);
+      #toolbar {
+        background: rgba(42, 42, 42, 0.8);
+        padding: 4px;
+        border-radius: 4px;
+      }
+      #toolbar input {
+        vertical-align: middle;
+        padding-top: 2px;
+        padding-bottom: 2px;
+      }
+    </style>
+    <div id="cesiumContainer" class="fullSize"></div>
+    <div id="loadingOverlay"><h1>Loading...</h1></div>
+    <div id="toolbar"></div>
+
+    <script id="cesium_sandcastle_script">
+      window.CESIUM_BASE_URL =
+        "https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium";
+
+      window.startup = async function (Cesium) {
+        const viewer = (window.viewer = new Cesium.Viewer("cesiumContainer"));
+        let dataSource; // Declare a variable to store the dataSource object
+
+        //示例 1：使用默认样式加载。
+        Sandcastle.addDefaultToolbarButton("Default styling", function () {
+          dataSource = Cesium.GeoJsonDataSource.load(
+            // "public/SampleData/ne_10m_us_states.topojson"
+            "public/SampleData/simplestyles2.geojson"
+          );
+          viewer.dataSources.add(dataSource);
+          viewer.zoomTo(dataSource);
+        });
+
+        //示例 2：加载基本样式选项。
+        Sandcastle.addToolbarButton("Basic styling", function () {
+          dataSource = Cesium.GeoJsonDataSource.load(
+            // "public/SampleData/ne_10m_us_states.topojson",
+            "public/SampleData/simplestyles2.geojson",
+            {
+              title: "标题",
+              description: "描述",
+              "marker-size": "medium",
+              "marker-symbol": "bus",
+              "marker-color": "#fff",
+              stroke: "#555555",
+              "stroke-opacity": 1.0,
+              "stroke-width": 2,
+              fill: "#555555",
+              "fill-opacity": 0.5,
+            }
+          );
+          viewer.dataSources.add(dataSource);
+          viewer.zoomTo(dataSource);
+        });
+
+        //示例 3：加载后应用自定义图形。
+        Sandcastle.addToolbarButton("Custom styling", function () {
+          //为随机数生成器播种以获得可重复的结果。
+          Cesium.Math.setRandomNumberSeed(0);
+
+          dataSource = Cesium.GeoJsonDataSource.load(
+            // "public/SampleData/ne_10m_us_states.topojson"
+            "public/SampleData/simplestyles2.geojson"
+          );
+          dataSource
+            .then(function (dataSource) {
+              viewer.dataSources.add(dataSource);
+
+              //获取实体数组
+              const entities = dataSource.entities.values;
+              const colorHash = {};
+              for (let i = 0; i < entities.length; i++) {
+                //对于每个实体，根据状态名称创建随机颜色。
+                //有些状态有多个实体，因此我们将颜色存储在哈希中，以便我们对整个状态使用相同的颜色。
+                const entity = entities[i];
+                const name = entity.name;
+                let color = colorHash[name];
+                if (!color) {
+                  color = Cesium.Color.fromRandom({
+                    alpha: 1.0,
+                  });
+                  colorHash[name] = color;
+                }
+
+                // 改为 entity.billboard.xxx=xxx 的形式
+                // entity.billboard.image = "public/SampleData/cesium_stripes.png";
+                entity.billboard.show = true;
+                entity.billboard.pixelOffset = new Cesium.Cartesian2(0, -50);
+                entity.billboard.eyeOffset = new Cesium.Cartesian3(
+                  0.0,
+                  0.0,
+                  0.0
+                );
+                entity.billboard.horizontalOrigin =
+                  Cesium.HorizontalOrigin.CENTER;
+                entity.billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                // entity.billboard.scale = 2.0;
+                // entity.billboard.width = 100;
+                // entity.billboard.height = 25;
+                // entity.billboard.rotation = Cesium.Math.PI_OVER_FOUR;
+                entity.billboard.color = color;
+                entity.billboard.alignedAxis = Cesium.Cartesian3.ZERO;
+                // scaleByDistance 属性将使实体在相机距离小于 1.5e2 米时放大到原始大小的 2.0 倍（即相机距离越近，实体就越大），而在相机距离大于 1.5e7 米时缩小到原始大小的 0.5 倍（即相机距离越远，实体就越小）。在这两个距离之间，实体的大小将根据相机距离进行线性插值，从而实现平滑的过渡效果。
+                entity.billboard.scaleByDistance = new Cesium.NearFarScalar(
+                  1.5e2,
+                  1.0,
+                  1.5e7,
+                  0.5
+                );
+
+                entity.label = {
+                  text: "Cesium Logo",
+                  font: "bold 24px sans-serif",
+                  fillColor: Cesium.Color.BLACK,
+                  style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                  outlineColor: Cesium.Color.WHITE,
+                  outlineWidth: 2,
+                  horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                  verticalOrigin: Cesium.VerticalOrigin.TOP,
+                  // pixelOffset: new Cesium.Cartesian2(0, 10),
+                };
+                // 指定了标注在相机距离超出一定范围时的显示或隐藏条件
+                entity.label.distanceDisplayCondition =
+                  new Cesium.DistanceDisplayCondition(0.0, 1.5e4);
+                  
+                // //将多边形材质设置为我们的随机颜色。
+                // entity.polygon.material = color;
+                // //删除轮廓。
+                // entity.polygon.outline = false;
+
+                // //根据州的人口拉伸多边形。每个实体都存储创建它的 GeoJSON 特征的属性
+                // //由于人口数量庞大，我们除以 50。
+                // entity.polygon.extrudedHeight =
+                //   entity.properties.Population / 50.0;
+              }
+              viewer.zoomTo(dataSource);
+            })
+            .catch(function (error) {
+              //显示加载时遇到的任何错误。
+              window.alert(error);
+            });
+        });
+
+        //切换演示时重置场景。
+        Sandcastle.reset = function () {
+          viewer.dataSources.removeAll();
+
+          //将相机设置为以美国为中心的倾斜视图，然后切换回在世界坐标中移动。
+          // dataSource ?? viewer.zoomTo(dataSource);
+          // viewer.camera.lookAt(
+          //   Cesium.Cartesian3.fromDegrees(-98.0, 40.0),
+          //   new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0)
+          // );
+          // viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+        };
+      };
+      if (typeof Cesium !== "undefined") {
+        window.startupCalled = true;
+
+        window.startup(Cesium); /* .catch((error) => {
+        "use strict";
+        console.error(error);
+      }); */
+        Sandcastle.finishedLoading();
+      }
+    </script>
+  </body>
+</html>
