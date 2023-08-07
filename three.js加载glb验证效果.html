@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>three.js webgl - animation - keyframes</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <link
+      type="text/css"
+      rel="stylesheet"
+      href="https://fastly.jsdelivr.net/gh/mrdoob/three.js@master/examples/main.css"
+    />
+    <style>
+      body {
+        /* background-color: #bfe3dd; */
+        color: #000;
+      }
+
+      a {
+        color: #2983ff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container"></div>
+
+    <div id="info">
+      <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a>
+      webgl - animation - keyframes<br />
+      Model:
+      <a
+        href="https://artstation.com/artwork/1AGwX"
+        target="_blank"
+        rel="noopener"
+        >Littlest Tokyo</a
+      >
+      by
+      <a href="https://artstation.com/glenatron" target="_blank" rel="noopener"
+        >Glen Fox</a
+      >, CC Attribution.
+    </div>
+
+    <!-- Import maps polyfill -->
+    <!-- Remove this when import maps will be widely supported -->
+    <script
+      async
+      src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"
+    ></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://fastly.jsdelivr.net/gh/mrdoob/three.js@master/build/three.module.js",
+          "three/addons/": "https://fastly.jsdelivr.net/gh/mrdoob/three.js@master/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
+      import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+      let camera, scene, renderer;
+
+      init();
+      render();
+
+      function init() {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        camera = new THREE.PerspectiveCamera(
+          45,
+          window.innerWidth / window.innerHeight,
+          10,
+          20000000
+        );
+        camera.position.set(-9000, 18555, -20555);
+
+        scene = new THREE.Scene();
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.54); // 白色环境光，强度为0.5
+        scene.add(ambientLight);
+
+        // LIGHTS
+
+        // {
+        //   //半球光
+        //   const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
+        //   // hemiLight.color.setRGB(1, 1, 1);
+        //   hemiLight.groundColor.setRGB(1, 0, 0);
+        //   hemiLight.position.set(0, 5000, 0);
+        //   scene.add(hemiLight);
+
+        //   const hemiLightHelper = new THREE.HemisphereLightHelper(
+        //     hemiLight,
+        //     1000
+        //   );
+        //   scene.add(hemiLightHelper);
+        // }
+
+        //
+
+        // {
+        //   // 点光源
+        //   const pointLight = new THREE.PointLight(0xffffff, 1, 38000, 0.2);
+        //   const sphere = new THREE.SphereGeometry(55, 16, 16);
+        //   pointLight.add(
+        //     new THREE.Mesh(
+        //       sphere,
+        //       new THREE.MeshBasicMaterial({ color: 0xff0040 })
+        //     )
+        //   );
+        //   pointLight.position.set(-0.5, 1.5, 1);
+        //   pointLight.position.multiplyScalar(1000);
+        //   scene.add(pointLight);
+        // }
+
+        {
+          // 纯正面直线光
+          const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+          //
+          dirLight.position.set(0, 0, -20);
+          dirLight.position.multiplyScalar(1000);
+          scene.add(dirLight);
+
+          dirLight.castShadow = true;
+
+          dirLight.shadow.radius = 15;
+          dirLight.shadow.mapSize.width = 2048;
+          dirLight.shadow.mapSize.height = 2048;
+
+          const d = 10000;
+
+          dirLight.shadow.camera.left = -d;
+          dirLight.shadow.camera.right = d;
+          dirLight.shadow.camera.top = d;
+          dirLight.shadow.camera.bottom = -d;
+
+          dirLight.shadow.camera.far = 350000;
+          dirLight.shadow.bias = -0.0001;
+
+          const dirLightHelper = new THREE.DirectionalLightHelper(
+            dirLight,
+            1000
+          );
+          scene.add(dirLightHelper);
+        }
+
+        // {
+        //   // 顶直线光
+        //   const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        //   //
+        //   dirLight.position.set(0, 20, 2);
+        //   dirLight.position.multiplyScalar(1000);
+        //   scene.add(dirLight);
+        //   const dirLightHelper = new THREE.DirectionalLightHelper(dirLight, 10);
+        //   scene.add(dirLightHelper);
+        // }
+
+        {
+          // 右直线光
+          const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+          //
+          dirLight.position.set(20, 2, 2);
+          dirLight.position.multiplyScalar(1000);
+          scene.add(dirLight);
+          const dirLightHelper = new THREE.DirectionalLightHelper(
+            dirLight,
+            1000
+          );
+          scene.add(dirLightHelper);
+        }
+
+        {
+          // 左直线光
+          const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+          //
+          dirLight.position.set(-20, 2, 2);
+          dirLight.position.multiplyScalar(1000);
+          scene.add(dirLight);
+          const dirLightHelper = new THREE.DirectionalLightHelper(
+            dirLight,
+            1000
+          );
+          scene.add(dirLightHelper);
+        }
+
+        {
+          // 正面光(偏上,偏右)
+          const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+          dirLight.color.setHSL(0.1, 1, 0.95);
+          dirLight.position.set(-10, 13, -20);
+          dirLight.position.multiplyScalar(1000);
+          scene.add(dirLight);
+
+          dirLight.castShadow = true;
+
+          // 设置阴影的模糊半径，使其更加柔和
+          dirLight.shadow.radius = 15;
+          // 设置阴影贴图的大小
+          dirLight.shadow.mapSize.width = 2048;
+          dirLight.shadow.mapSize.height = 2048;
+
+          const d = 20000;
+
+          // 设置阴影相机的视锥体参数
+          dirLight.shadow.camera.left = -d;
+          dirLight.shadow.camera.right = d;
+          dirLight.shadow.camera.top = d;
+          dirLight.shadow.camera.bottom = -d;
+          // 设置阴影相机的远截面
+          dirLight.shadow.camera.far = 350000;
+
+          // 设置阴影映射偏移量，以消除阴影出现失真、抖动或偏移等问题
+          dirLight.shadow.bias = -0.0001;
+
+          // 创建一个平行光源的辅助对象，用于可视化平行光源的方向和范围
+          const dirLightHelper = new THREE.DirectionalLightHelper(
+            dirLight,
+            1000
+          );
+          scene.add(dirLightHelper);
+        }
+        {
+          // 后面光(偏上,偏左)
+          const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+          dirLight.color.setHSL(0.1, 1, 0.95);
+          dirLight.position.set(5, 13, 10);
+          dirLight.position.multiplyScalar(1000);
+          scene.add(dirLight);
+
+          dirLight.castShadow = true;
+
+          dirLight.shadow.radius = 15;
+          dirLight.shadow.mapSize.width = 2048;
+          dirLight.shadow.mapSize.height = 2048;
+
+          const d = 20000;
+
+          dirLight.shadow.camera.left = -d;
+          dirLight.shadow.camera.right = d;
+          dirLight.shadow.camera.top = d;
+          dirLight.shadow.camera.bottom = -d;
+
+          dirLight.shadow.camera.far = 350000;
+          dirLight.shadow.bias = -0.0001;
+
+          const dirLightHelper = new THREE.DirectionalLightHelper(
+            dirLight,
+            1000
+          );
+          scene.add(dirLightHelper);
+        }
+        // {
+        //   // 左直线光(产生阴影)
+        //   const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        //   dirLight.color.setHSL(0.1, 1, 0.95);
+        //   dirLight.position.set(1, 1.35, -2);
+        //   dirLight.position.multiplyScalar(1000);
+        //   scene.add(dirLight);
+
+        //   dirLight.castShadow = true;
+
+        //   dirLight.shadow.mapSize.width = 2048;
+        //   dirLight.shadow.mapSize.height = 2048;
+
+        //   const d = 20000;
+
+        //   dirLight.shadow.camera.left = -d;
+        //   dirLight.shadow.camera.right = d;
+        //   dirLight.shadow.camera.top = d;
+        //   dirLight.shadow.camera.bottom = -d;
+
+        //   dirLight.shadow.camera.far = 350000;
+        //   dirLight.shadow.bias = -0.0001;
+
+        //   const dirLightHelper = new THREE.DirectionalLightHelper(dirLight, 1000);
+        //   scene.add(dirLightHelper);
+        // }
+        {
+          // GROUND
+
+          const groundGeo = new THREE.PlaneGeometry(100000, 100000, 128, 128);
+          const groundMat = new THREE.MeshPhongMaterial({
+            // wireframe: true,//是否显示为网格
+            color: 0xffffff,
+          });
+          groundMat.color.setHSL(0.095, 1, 0.75);
+
+          const ground = new THREE.Mesh(groundGeo, groundMat);
+          ground.position.y = -1522;
+          ground.rotation.x = -Math.PI / 2;
+          ground.receiveShadow = true;
+          scene.add(ground);
+        }
+
+        // new RGBELoader()
+        //   .setPath(
+        //     "https://fastly.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/equirectangular/"
+        //   )
+        //   .load("royal_esplanade_1k.hdr", function (texture) {
+        // texture.mapping = THREE.EquirectangularReflectionMapping;
+
+        // scene.background = texture;
+        // scene.environment = texture;
+
+        // render();
+
+        // model
+
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath(
+          "https://fastly.jsdelivr.net/gh/mrdoob/three.js@master/examples/jsm/libs/draco/gltf/"
+        );
+
+        const loader = new GLTFLoader().setPath("http://localhost:3000/");
+        loader.setDRACOLoader(dracoLoader);
+        loader.load("yz_metalrough.glb", function (gltf) {
+          window.model = gltf.scene;
+          gltf.scene.traverse(function (child) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          });
+
+          scene.add(gltf.scene);
+
+          render();
+        });
+        // });
+
+        renderer = window.renderer = new THREE.WebGLRenderer({
+          antialias: true,
+        });
+        {
+          renderer.setPixelRatio(window.devicePixelRatio);
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          // renderer.toneMapping = THREE.ACESFilmicToneMapping;
+          renderer.toneMapping = THREE.LinearToneMapping;
+          renderer.toneMappingExposure = 1;
+          container.appendChild(renderer.domElement);
+          //
+          renderer.shadowMap.enabled = true;
+        }
+
+        {
+          // 抗锯齿
+          const composer = new EffectComposer(renderer);
+          composer.addPass(new RenderPass(scene, camera));
+
+          const pass = new SMAAPass(
+            window.innerWidth * renderer.getPixelRatio(),
+            window.innerHeight * renderer.getPixelRatio()
+          );
+          composer.addPass(pass);
+        }
+
+        {
+          const controls = new OrbitControls(camera, renderer.domElement);
+          controls.addEventListener("change", render); // use if there is no animation loop
+          controls.minDistance = 2;
+          controls.maxDistance = 10000000;
+          controls.target.set(0, 0, -0.2);
+          controls.update();
+        }
+
+        window.addEventListener("resize", onWindowResize);
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        render();
+      }
+
+      //
+
+      function render() {
+        renderer.render(scene, camera);
+      }
+      window.render = render;
+    </script>
+  </body>
+</html>
