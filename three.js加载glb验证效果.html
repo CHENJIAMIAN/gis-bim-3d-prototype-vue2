@@ -70,8 +70,11 @@
       import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
       import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
       import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-
-      let camera, scene, renderer;
+      import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
+      import { ColorCorrectionShader } from "three/addons/shaders/ColorCorrectionShader.js";
+      import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+      
+      let camera, scene, renderer, composer1, composer2;
 
       init();
       render();
@@ -346,6 +349,7 @@
         {
           renderer.setPixelRatio(window.devicePixelRatio);
           renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.autoClear = false;
           // renderer.toneMapping = THREE.ACESFilmicToneMapping;
           renderer.toneMapping = THREE.LinearToneMapping;
           renderer.toneMappingExposure = 1;
@@ -354,16 +358,37 @@
           renderer.shadowMap.enabled = true;
         }
 
+        composer1 = new EffectComposer(renderer);
+        composer2 = new EffectComposer(renderer);
         {
-          // 抗锯齿
-          const composer = new EffectComposer(renderer);
-          composer.addPass(new RenderPass(scene, camera));
+          const colorCorrectionPass = new ShaderPass(ColorCorrectionShader);//将颜色值分别提高到原来的二次方让渲染结果看起来更加鲜明、清晰
+          const renderPass = new RenderPass(scene, camera);
+          renderPass.clearColor = new THREE.Color(0, 0, 0);
+          renderPass.clearAlpha = 0;
 
-          const pass = new SMAAPass(
+          //SMAAPass 抗锯齿
+          const smaaPass = new SMAAPass(
             window.innerWidth * renderer.getPixelRatio(),
             window.innerHeight * renderer.getPixelRatio()
           );
-          composer.addPass(pass);
+          composer1.addPass(renderPass);
+          composer1.addPass(smaaPass);
+          const outputPass = new OutputPass();
+          composer1.addPass(outputPass);
+
+          // FXAAShader 抗锯齿
+          //
+          const fxaaPass = new ShaderPass(FXAAShader);
+          const pixelRatio = renderer.getPixelRatio();
+          fxaaPass.material.uniforms["resolution"].value.x =
+            1 / (container.offsetWidth * pixelRatio);
+          fxaaPass.material.uniforms["resolution"].value.y =
+            1 / (container.offsetHeight * pixelRatio);
+          //
+          composer2.addPass(renderPass);
+          // composer2.addPass(colorCorrectionPass);
+          composer2.addPass(fxaaPass);
+          composer2.addPass(outputPass);
         }
 
         {
@@ -390,7 +415,9 @@
       //
 
       function render() {
-        renderer.render(scene, camera);
+        // renderer.render(scene, camera);
+        // composer1.render();
+        composer2.render();
       }
       window.render = render;
     </script>
