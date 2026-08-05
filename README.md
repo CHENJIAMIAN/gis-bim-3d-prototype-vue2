@@ -1,3 +1,11 @@
+[English](./README.en.md)
+
+<!-- codex-github-rules:bilingual-summary -->
+> **中文简介**：基于 Vue 2 的 GIS/BIM 三维项目原型
+>
+> **English summary**: A Vue 2 prototype for a 3D GIS/BIM project
+
+---
 # gis-bim-3d-prototype-vue2
 
 This template should help get you started developing with Vue 3 in Vite.
